@@ -13,9 +13,20 @@ __pycache__/
 
 # Ambientes e Segredos
 .env
+.env.*
 .env.local
+!.env.example
+!**/.env.example
 *.key
 *.pem
+
+# SQLite Databases, ChromaDB & Local Runtime Data
+*.db
+*.sqlite
+*.sqlite3
+data/
+**/data/*.db
+**/data/chroma/
 
 # Distribuição & Logs
 dist/
@@ -32,4 +43,3 @@ build/
 # Sistema Operacional
 .DS_Store
 Thumbs.db
-
