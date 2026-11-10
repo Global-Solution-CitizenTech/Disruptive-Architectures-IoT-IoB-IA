@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZelaFix IA & IoT Dashboard — FIAP Global Solution 2026/2</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏙️</text></svg>">
+</head>
+<body>
+
+  <header>
+    <div class="logo-area">
+      <span class="logo-badge">FIAP GS 2026/2</span>
+      <div class="title-area">
+        <h1>ZelaFix — IA, IoT & IoB Engine</h1>
+        <p>Disruptive Architectures: IoT, IoB & Generative IA • Turma 2TDSPG • ODS 11 ONU</p>
+      </div>
+    </div>
+    <div class="header-links">
+      <a href="/docs" target="_blank">📄 Swagger OpenAPI</a>
+      <a href="/health" target="_blank">🩺 Health Check</a>
+      <a href="/api/v1/meta" target="_blank">👥 Equipe FIAP</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid-layout">
+      <!-- Painel de Controle e Entrada -->
+      <section>
+        <div class="panel-card">
+          <h2>🎯 Simulação de Ocorrência Cidadã</h2>
+
+          <label>Cenários Rápidos para Demonstração:</label>
+          <div class="quick-presets">
+            <button class="preset-btn" onclick="carregarCenario('buraco_critico')">🕳️ Cratera na Paulista</button>
+            <button class="preset-btn" onclick="carregarCenario('bueiro_alagamento')">🌊 Bueiro Entupido / Chuva</button>
+            <button class="preset-btn" onclick="carregarCenario('poste_apagado')">💡 Apagão Noturno</button>
+            <button class="preset-btn" onclick="carregarCenario('arvore_fios')">⚡ Árvore na Fiação</button>
+            <button class="preset-btn" onclick="carregarCenario('entulho_calcada')">🧱 Entulho Bloqueando</button>
+          </div>
+
+          <form id="triagemForm" onsubmit="executarTriagem(event)">
+            <div class="form-group">
+              <label for="titulo">Título da Ocorrência</label>
+              <input type="text" id="titulo" required placeholder="Ex: Cratera profunda na faixa de rolamento">
+            </div>
+
+            <div class="form-group">
+              <label for="categoria">Categoria Oficial</label>
+              <select id="categoria">
+                <option value="Buraco na Rua">Buraco na Rua</option>
+                <option value="Bueiro Entupido">Bueiro Entupido</option>
+                <option value="Iluminação Pública">Iluminação Pública</option>
+                <option value="Entulho e Descarte Irregular">Entulho e Descarte Irregular</option>
+                <option value="Poda de Árvore">Poda de Árvore</option>
+                <option value="Sinalização e Trânsito">Sinalização e Trânsito</option>
+                <option value="Vazamento de Água">Vazamento de Água</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="descricao">Descrição do Morador</label>
+              <textarea id="descricao" rows="3" placeholder="Detalhes do problema, pontos de referência e riscos observados..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="fotoUrl">URL da Evidência Fotográfica</label>
+              <input type="text" id="fotoUrl" placeholder="https://images.unsplash.com/..." onchange="atualizarPreviewFoto()">
+              <img id="imgPreview" class="preview-img" src="" alt="Prévia da Foto" style="display: none;">
+            </div>
+
+            <div class="form-group">
+              <label for="apoiosCount">Engajamento Comunitário (IoB - Apoios +1)</label>
+              <input type="text" id="apoiosCount" value="28">
+            </div>
+
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="simularIot" checked>
+                Ativar Telemetria de Sensores IoT no Local
+              </label>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-primary">
+              ⚡ Executar Triagem com IA + RAG + IoT
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Painel de Resultados da Triagem -->
+      <section>
+        <div class="panel-card">
+          <h2>📊 Laudo Técnico da Triagem Multimodal</h2>
+
+          <div id="loadingArea" style="display: none; text-align: center; padding: 40px;">
+            <p style="color: var(--accent-blue); font-size: 16px;">Processando Visão Computacional, RAG Normativo e GenAI...</p>
+          </div>
+
+          <div id="resultsArea" class="results-container">
+            <div class="banner-laudo" id="bannerLaudo">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="status-badge" id="badgePrioridade">Aguardando Execução</span>
+                <span id="txtSla" style="font-size: 12px; color: var(--text-muted);">SLA: --</span>
+              </div>
+              <h3 id="txtOrgao" style="font-size: 15px; margin-bottom: 6px; color: var(--accent-blue);">Órgão Competente: --</h3>
+              <p id="txtParecer">Preencha o formulário ou selecione um dos cenários de teste à esquerda para iniciar a avaliação da IA.</p>
+            </div>
+
+            <div class="sub-grid">
+              <!-- Aprofundamento 1: Visão Computacional -->
+              <div class="sub-card">
+                <h3>👁️ Visão Computacional</h3>
+                <div class="meta-row">
+                  <span>Categoria Detectada:</span>
+                  <span id="cvCategoria">--</span>
+                </div>
+                <div class="meta-row">
+                  <span>Confiança do Modelo:</span>
+                  <span id="cvConfianca">--</span>
+                </div>
+                <div class="meta-row">
+                  <span>Severidade Visual:</span>
+                  <span id="cvSeveridade">--</span>
+                </div>
+                <div class="meta-row">
+                  <span>Densidade de Bordas:</span>
+                  <span id="cvBordas">--</span>
+                </div>
+                <div class="meta-row">
+                  <span>Rugosidade Textura:</span>
+                  <span id="cvRugosidade">--</span>
+                </div>
+              </div>
+
+              <!-- Aprofundamento 2: RAG Normativo -->
+              <div class="sub-card">
+                <h3>⚖️ Base Normativa (RAG)</h3>
+                <div class="meta-row">
+                  <span>Enquadramento:</span>
+                  <span id="ragEnquadramento" style="font-size: 11px;">--</span>
+                </div>
+                <div class="meta-row">
+                  <span>Risco Potencial:</span>
+                  <span id="ragRisco" style="font-size: 11px;">--</span>
+                </div>
+                <div id="ragChunksArea" style="margin-top: 10px;">
+                  <!-- Injetado dinamicamente -->
+                </div>
+              </div>
+
+              <!-- Arquitetura Disruptiva: IoT -->
+              <div class="sub-card">
+                <h3>📡 Sensores Conectados (IoT)</h3>
+                <div class="meta-row">
+                  <span>Sensor Ativo:</span>
+                  <span id="iotAtivo">--</span>
+                </div>
+                <div class="meta-row">
+                  <span>Tipo do Dispositivo:</span>
+                  <span id="iotTipo">--</span>
+                </div>
+                <div class="meta-row">
+                  <span>Anomalia Física:</span>
+                  <span id="iotAnomalia">--</span>
+                </div>
+                <div class="meta-row">
+                  <span>Diagnóstico:</span>
+                  <span id="iotDiagnostico" style="font-size: 11px;">--</span>
+                </div>
+              </div>
+
+              <!-- Arquitetura Disruptiva: IoB -->
+              <div class="sub-card">
+                <h3>👥 Mobilização Comunitária (IoB)</h3>
+                <div class="meta-row">
+                  <span>Social Urgency Score:</span>
+                  <span id="iobScore">--</span>
+                </div>
+                <div class="meta-row">
+                  <span>Apoios Vizinhos (+1):</span>
+                  <span id="iobApoios">--</span>
+                </div>
+                <div class="meta-row">
+                  <span>Engajamento:</span>
+                  <span id="iobEngajamento">--</span>
+                </div>
+                <div class="meta-row">
+                  <span>Escalação Social:</span>
+                  <span id="iobAjuste">--</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Checklist Técnico de Campo -->
+            <div class="sub-card" style="margin-top: 12px;">
+              <h3>📋 Checklist Técnico para a Equipe de Campo</h3>
+              <ul class="checklist-list" id="checklistArea">
+                <li>Aguardando triagem técnica...</li>
+              </ul>
+            </div>
+
+            <div style="font-size: 11px; color: var(--text-muted); text-align: right; margin-top: 4px;">
+              Provedor GenAI: <strong id="txtProvedor" style="color: var(--primary);">--</strong>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <p>FIAP Global Solution 2026/2 — Disruptive Architectures: IoT, IoB & Generative IA • Projeto ZelaFix Mobile</p>
+    <p style="margin-top: 4px; font-size: 11px;">Enzo Okuizumi (561432) • Gustavo Okada (563428) • Lucas Barros Gouveia (566422) • Luna de Carvalho Guimarães (562290) • Milton Marcelino (564836)</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
+
