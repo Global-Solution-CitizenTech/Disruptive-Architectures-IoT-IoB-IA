@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: zelafix-ai
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: Disruptive-Architectures-IoT-IoB-IA/deploy_zelafixai_render
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: GROQ_API_KEY
+        sync: false
+      - key: AI_PROVIDER
+        value: groq
+      - key: GEMINI_API_KEY
+        sync: false
