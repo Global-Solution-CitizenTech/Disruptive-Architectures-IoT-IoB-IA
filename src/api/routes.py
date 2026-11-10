@@ -5,11 +5,17 @@ Compatíveis com os endpoints consumidos pelo ZelaFix Mobile e Spring Boot
 
 from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends
-from ..schemas.chamado_ia import TriagemRequestDTO, TriagemResponseDTO
+from ..schemas.chamado_ia import (
+    TriagemRequestDTO,
+    TriagemResponseDTO,
+    ChatCidadaoRequestDTO,
+    ChatCidadaoResponseDTO
+)
 from ..schemas.cv_models import ImageAnalysisRequest, ImageAnalysisResponse
 from ..schemas.rag_models import RagQueryRequest, RagQueryResponse
 from ..schemas.iot_models import IotTelemetryPayload, IotAnalysisResult
 from ..services.triagem_service import TriagemService
+from ..services.chat_service import ChatCidadaoService
 from ..cv.classifier import UrbanCVClassifier
 from ..rag.knowledge_retriever import KnowledgeRetriever
 from ..iot.sensor_processor import UrbanSensorProcessor
@@ -22,9 +28,13 @@ router = APIRouter()
 _triagem_service = TriagemService()
 _cv_classifier = UrbanCVClassifier()
 _rag_retriever = KnowledgeRetriever()
+_chat_service = ChatCidadaoService(retriever=_rag_retriever)
 
 def get_triagem_service() -> TriagemService:
     return _triagem_service
+
+def get_chat_service() -> ChatCidadaoService:
+    return _chat_service
 
 def get_cv_classifier() -> UrbanCVClassifier:
     return _cv_classifier
@@ -128,6 +138,28 @@ def calcular_iob(dados: Dict[str, Any]):
         author_reputation=reputacao,
         nearby_reports=relatos_prox
     )
+
+@router.post(
+    "/api/v1/chat-cidadao",
+    response_model=ChatCidadaoResponseDTO,
+    summary="Chat Cidadão Inteligente RAG (ZelaBot Mobile)",
+    tags=["Chat Cidadão IA"]
+)
+def chat_cidadao(
+    request: ChatCidadaoRequestDTO,
+    chat_svc: ChatCidadaoService = Depends(get_chat_service)
+):
+    """
+    Endpoint conversacional para o morador tirar dúvidas no app ZelaFix Mobile.
+    Utiliza RAG sobre a legislação municipal e oferece auxílio na abertura de chamados.
+    """
+    try:
+        return chat_svc.responder_cidadao(request)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao processar mensagem do cidadão: {str(e)}"
+        )
 
 @router.get("/health", tags=["Monitoramento"])
 @router.get("/actuator/health", tags=["Monitoramento"])

@@ -5,7 +5,10 @@ from .chamado_ia import (
     AnaliseVisualResumo,
     RagEvidenciaResumo,
     IotResumo,
-    IobResumo
+    IobResumo,
+    ChatMessageDTO,
+    ChatCidadaoRequestDTO,
+    ChatCidadaoResponseDTO
 )
 from .cv_models import ImageAnalysisRequest, ImageAnalysisResponse, VisualFeaturesDTO
 from .iot_models import IotTelemetryPayload, IotAnalysisResult
@@ -26,6 +29,9 @@ __all__ = [
     "IotAnalysisResult",
     "RagQueryRequest",
     "RagQueryResponse",
-    "RagDocumentChunk"
+    "RagDocumentChunk",
+    "ChatMessageDTO",
+    "ChatCidadaoRequestDTO",
+    "ChatCidadaoResponseDTO"
 ]
 

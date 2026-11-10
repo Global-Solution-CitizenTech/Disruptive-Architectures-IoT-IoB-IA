@@ -103,3 +103,17 @@ def test_iob_analise_comportamental_endpoint():
     assert data["social_urgency_score"] >= 8.0
     assert data["ajuste_prioridade_comunitario"] is True
 
+def test_chat_cidadao_endpoint():
+    payload = {
+        "mensagem": "Qual o prazo para a prefeitura tampar um buraco na minha rua?",
+        "historico": []
+    }
+    response = client.post("/api/v1/chat-cidadao", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "resposta" in data
+    assert len(data["resposta"]) > 20
+    assert data["categoriaSugerida"] == "Buraco na Rua"
+    assert data["sugestaoAberturaChamado"] is True
+    assert "156" in str(data["telefonesUteis"])
+

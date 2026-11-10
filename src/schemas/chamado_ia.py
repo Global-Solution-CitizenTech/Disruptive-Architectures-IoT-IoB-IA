@@ -68,3 +68,20 @@ class TriagemResponseDTO(BaseModel):
     provedorGenAi: str = Field("Google Gemini 2.5 Flash (ou Heurístico de Alta Fidelidade)")
     statusExecucao: str = Field("SUCESSO")
 
+class ChatMessageDTO(BaseModel):
+    role: str = Field("user", example="user", description="user | assistant | system")
+    content: str = Field(..., example="Qual o prazo para a prefeitura tampar um buraco?")
+
+class ChatCidadaoRequestDTO(BaseModel):
+    mensagem: str = Field(..., min_length=1, max_length=1000, example="Como faço para pedir a poda de uma árvore que está caindo?")
+    historico: Optional[List[ChatMessageDTO]] = Field(default_factory=list)
+    bairro: Optional[str] = Field(None, example="Bela Vista")
+
+class ChatCidadaoResponseDTO(BaseModel):
+    resposta: str
+    baseLegalUtilizada: Optional[str] = None
+    orgaoCompetenteSugerido: Optional[str] = None
+    telefonesUteis: List[str] = Field(default_factory=lambda: ["Prefeitura: 156", "Defesa Civil: 199", "Bombeiros: 193"])
+    sugestaoAberturaChamado: bool = False
+    categoriaSugerida: Optional[str] = None
+
