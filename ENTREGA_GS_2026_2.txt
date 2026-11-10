@@ -1,0 +1,25 @@
+================================================================================
+FIAP GLOBAL SOLUTION 2026/2 - CITIZENTECH
+DISCIPLINA: DISRUPTIVE ARCHITECTURES: IOT, IOB & GENERATIVE IA
+TURMA: 2TDSPG
+================================================================================
+
+1. NOME DO PROJETO / SOLUÇÃO:
+ZelaFix — Zeladoria Urbana Inteligente (IA Multimodal, RAG Normativo & IoT/IoB)
+
+2. INTEGRANTES DO GRUPO (RM E NOME COMPLETO):
+- Enzo Okuizumi              | RM: 561432 | 2TDSPG
+- Gustavo Okada              | RM: 563428 | 2TDSPG
+- Lucas Barros Gouveia       | RM: 566422 | 2TDSPG
+- Luna de Carvalho Guimarães | RM: 562290 | 2TDSPG
+- Milton Marcelino           | RM: 564836 | 2TDSPG
+
+3. LINK DO REPOSITÓRIO NO GITHUB:
+https://github.com/Global-Solution-CitizenTech/Disruptive-Architectures-IoT-IoB-IA
+
+4. ALINHAMENTO COM O TEMA CITIZENTECH E ONU:
+- Tema: CitizenTech — Tecnologia com o cidadão no centro da inovação
+- Alinhamento ONU: ODS 11 — Cidades e Comunidades Sustentáveis
+- Funcionalidade: Triagem Inteligente Multimodal com Visão Computacional, RAG regulatório municipal de São Paulo, Sensores Urbanos IoT e Análise Comportamental (IoB).
+
+================================================================================
