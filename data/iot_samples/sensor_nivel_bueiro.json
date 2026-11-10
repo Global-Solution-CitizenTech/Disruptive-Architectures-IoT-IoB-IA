@@ -1,0 +1,25 @@
+{
+  "device_id": "IOT-DRAIN-SP-108",
+  "device_type": "ultrasonic_water_level",
+  "installation_point": "Boca de Lobo Sarjeta Norte",
+  "timestamp": "2026-11-10T14:35:12Z",
+  "location": {
+    "latitude": -23.5505,
+    "longitude": -46.6333,
+    "street": "Rua 25 de Março, 400",
+    "neighborhood": "Centro Histórico",
+    "city": "São Paulo"
+  },
+  "readings": {
+    "distance_to_water_cm": 8.5,
+    "max_depth_cm": 120.0,
+    "calculated_fill_percentage": 92.9,
+    "flow_velocity_ms": 0.12,
+    "water_overflow_risk": true
+  },
+  "thresholds": {
+    "critical_fill_percentage": 85.0,
+    "status": "IMMINENT_FLOOD_ALERT"
+  }
+}
+

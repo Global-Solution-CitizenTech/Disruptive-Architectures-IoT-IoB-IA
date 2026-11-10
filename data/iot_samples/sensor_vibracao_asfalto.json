@@ -1,0 +1,26 @@
+{
+  "device_id": "IOT-VIB-SP-042",
+  "device_type": "fleet_accelerometer",
+  "vehicle_type": "Onibus Municipal - Linha 875A",
+  "timestamp": "2026-11-10T14:32:00Z",
+  "location": {
+    "latitude": -23.5629,
+    "longitude": -46.6544,
+    "street": "Avenida Paulista, 1578",
+    "neighborhood": "Bela Vista",
+    "city": "São Paulo"
+  },
+  "readings": {
+    "acceleration_x_g": 0.42,
+    "acceleration_y_g": 0.38,
+    "acceleration_z_g": 3.85,
+    "speed_kmh": 42.5,
+    "road_anomaly_flag": true,
+    "estimated_hole_depth_cm": 9.4
+  },
+  "thresholds": {
+    "g_force_alert_limit": 2.5,
+    "status": "CRITICAL_IMPACT"
+  }
+}
+
