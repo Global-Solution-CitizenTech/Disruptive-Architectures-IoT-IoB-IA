@@ -130,14 +130,20 @@ flowchart TD
 - **Mecanismo de Recuperação Vetorial (`src/rag/vector_store.py`):**
   - Chunking semântico por seções normativas, vetorização com `TfidfVectorizer` (n-gramas 1 a 3) e busca semântica por `cosine_similarity` com boost de relevância de categoria.
 
-### 4.3 Arquitetura Disruptiva: Sensores IoT & Comportamento Cidadão (IoB)
-- **IoT (Internet of Things):** Ingestão de telemetrias em tempo real:
-  - *Acelerômetros triaxiais viários:* detectam impacto vertical mecânico > 2.5G em ônibus municipais, sinalizando buracos antes mesmo do morador relatar.
-  - *Sensores ultrassônicos em bocas de lobo:* alertam nível d'água > 85%, prevenindo alagamentos.
-  - *Fotocélulas de luminárias públicas:* detectam corrente zerada no período noturno.
+### 4.3 Arquitetura Disruptiva: Sensores IoT, Edge Computing & Comportamento Cidadão (IoB)
+- **IoT (Internet of Things) & Edge Computing:**
+  - **Firmware de Borda ESP32 (`firmware/esp32_zelafix_nodes.ino`):** Código em C++ para microcontrolador ESP32 (compatível com hardware real e simulador Wokwi em `firmware/diagram.json`), executando filtragem de ruídos e detecção antecipada de anomalias na borda (Edge Computing) antes do envio para a nuvem.
+  - *Acelerômetros triaxiais viários (MPU-6050):* embarcados em frotas de ônibus municipais (SPTrans) detectando impacto vertical mecânico > 2.50G, sinalizando crateras no asfalto com localização GPS.
+  - *Sensores ultrassônicos em bocas de lobo (HC-SR04):* monitoram a lâmina d'água na caixa coletora e alertam se o preenchimento ultrapassar 80.0%, prevenindo alagamentos antes de tempestades.
+  - *Fotocélulas LDR em luminárias públicas:* detectam ausência de corrente e escuridão no período noturno (apagões em vias escolares e pontos de ônibus).
+  - *Streaming de Telemetria (`scripts/simulate_iot_stream.py`):* Script executável para simulação de fluxo contínuo de múltiplos nós urbanos em tempo real.
 - **IoB (Internet of Behaviors):**
   - Métrica de mobilização social comunitária: se a ocorrência acumular `>= 25` apoios (+1) de moradores vizinhos, a prioridade é elevada automaticamente para **Crítica** (escalonamento social prioritário).
   - Cálculo do *Social Urgency Score (SUS)* ponderando reputação do autor, proximidade geográfica e apoios comunitários.
+
+### 4.4 Assistente Cidadão de Zeladoria Inteligente (ZelaBot RAG)
+- Endpoint `POST /api/v1/chat-cidadao`: Atende ao desejo do cidadão de tirar dúvidas interativas sobre a cidade no aplicativo móvel ZelaFix.
+- Ao contrário de um "chat genérico solto" (proibido pelo edital), o ZelaBot é fundamentado no RAG regulatório de São Paulo, explicando prazos normativos, regras de poda e descarte em Ecopontos, com botões inteligentes para abertura direta de chamados.
 
 ---
 
@@ -157,7 +163,7 @@ A solução foi submetida a uma bateria exaustiva de testes automatizados e benc
 | **Acurácia de Categorização Visual** | **100.00%** | > 80.0% | **APROVADO** |
 | **Latência Média de Inferência** | **3.11 ms** | < 250 ms | **EXCELENTE** |
 | **Latência P95 (Percentil 95)** | **4.39 ms** | < 500 ms | **EXCELENTE** |
-| **Tempo Total de Testes (29 Testes Unitários)** | **4.58 s** | < 30 s | **APROVADO (100% Pass)** |
+| **Tempo Total de Testes (30 Testes Unitários)** | **2.98 s** | < 30 s | **APROVADO (100% Pass)** |
 
 ### 5.2 Matriz de Confusão de Severidade Urbana
 
@@ -242,15 +248,20 @@ Disruptive-Architectures-IoT-IoB-IA/
 │   │   ├── gemini_client.py            # SDK Google Gemini + Fallback de Alta Fidelidade
 │   │   └── prompt_templates.py         # Prompts de engenharia e diretrizes de laudo
 │   ├── services/
-│   │   └── triagem_service.py          # Orquestrador central de ponta a ponta
+│   │   ├── triagem_service.py          # Orquestrador central de ponta a ponta
+│   │   └── chat_service.py             # Assistente ZelaBot com RAG para o Cidadão
 │   └── api/
-│       ├── routes.py                   # Rotas RESTful (/triagem-ia, /cv, /rag, /iot, /iob)
+│       ├── routes.py                   # Rotas RESTful (/triagem-ia, /cv, /rag, /iot, /iob, /chat-cidadao)
 │       └── app.py                      # FastAPI App, CORS, Static Files & Docs
+├── firmware/                           # Edge Computing & Simulação IoT (Wokwi / Hardware)
+│   ├── README.md                       # Guia de montagem de circuito e simulação Wokwi
+│   ├── diagram.json                    # Diagrama de conexões para simulador Wokwi ESP32
+│   └── esp32_zelafix_nodes.ino         # Firmware C++ completo (MPU6050, HC-SR04, LDR)
 ├── static/                             # Dashboard Web para Apresentação Presencial
 │   ├── index.html                      # Interface visual interativa para a banca
 │   ├── styles.css                      # Design System moderno Dark Theme
 │   └── app.js                          # Integração cliente e simulação de cenários
-├── tests/                              # Suíte completa de testes automatizados (Pytest)
+├── tests/                              # Suíte completa de testes automatizados (Pytest - 30 testes)
 │   ├── test_api.py
 │   ├── test_cv_classifier.py
 │   ├── test_rag_retriever.py
@@ -260,7 +271,8 @@ Disruptive-Architectures-IoT-IoB-IA/
 │   └── test_failure_modes.py
 ├── scripts/
 │   ├── eval_metrics.py                 # Script de benchmark e matriz de confusão
-│   └── generate_dataset.py             # Gerador do dataset representativo urbano
+│   ├── generate_dataset.py             # Gerador do dataset representativo urbano
+│   └── simulate_iot_stream.py          # Simulador de streaming de telemetria IoT em tempo real
 ├── .env.example                        # Variáveis de ambiente sem dados sensíveis
 ├── .gitignore                          # Exclusões padrão do Git
 ├── Dockerfile                          # Container Docker otimizado
@@ -305,9 +317,19 @@ pytest -v
 
 # 6. Inicie o servidor da API e Dashboard Web
 python -m uvicorn src.api.app:app --host 0.0.0.0 --port 8000 --reload
+
+# 7. (Opcional - Terminal Paralelo) Simule streaming contínuo de sensores IoT em tempo real:
+python scripts/simulate_iot_stream.py --cycles 10 --interval 1.5
 ```
 
-Após iniciar, acesse no navegador:
+### Simulação do Firmware de Borda ESP32 no Wokwi
+Para visualizar o microcontrolador ESP32 processando sensores de borda:
+1. Abra o [Simulador Wokwi](https://wokwi.com) e crie um projeto ESP32.
+2. Cole o código de [`firmware/esp32_zelafix_nodes.ino`](file:///c:/desenvolvimento/faculdade/GS/Disruptive-Architectures-IoT-IoB-IA/firmware/esp32_zelafix_nodes.ino) no editor principal.
+3. Cole as definições de circuito de [`firmware/diagram.json`](file:///c:/desenvolvimento/faculdade/GS/Disruptive-Architectures-IoT-IoB-IA/firmware/diagram.json) na aba `diagram.json`.
+4. Inicie a simulação: o ESP32 executará amostragem contínua de aceleração viária, nível de alagamento por ultrassom e fotometria de iluminação pública com alerta visual via LEDs e publicação JSON!
+
+Após iniciar a API, acesse no navegador:
 - **Dashboard Interativo da Apresentação:** `http://localhost:8000/dashboard`
 - **Documentação Interativa Swagger OpenAPI:** `http://localhost:8000/docs`
 - **Health Check Operacional:** `http://localhost:8000/health`
@@ -404,6 +426,40 @@ docker-compose up --build
   },
   "provedorGenAi": "Google Gemini (gemini-2.5-flash)",
   "statusExecucao": "SUCESSO"
+}
+```
+
+### `POST /api/v1/chat-cidadao` (Assistente ZelaBot com RAG Municipal)
+Permite ao morador interagir com a IA no ZelaFix Mobile para esclarecer dúvidas sobre zeladoria urbana, fundamentando respostas nos Decretos Municipais de São Paulo e fornecendo sugestões proativas para abertura de chamados.
+
+#### Payload de Requisição (Exemplo):
+```json
+{
+  "mensagem": "Qual o prazo que a prefeitura tem para tapar um buraco grande na minha rua?",
+  "bairro": "Bela Vista",
+  "categoriaContexto": "Buraco na Rua",
+  "historico": []
+}
+```
+
+#### Resposta Retornada:
+```json
+{
+  "resposta": "Olá, cidadão! Para buracos na via pública, conforme o Decreto Municipal nº 59.150/2019 e o Programa Tapa-Buraco de São Paulo, o prazo normativo padrão é de até 24 horas em vias arteriais/corredores de ônibus e de até 72 horas em vias locais. Você pode abrir um chamado diretamente no ZelaFix anexando a foto para vistoria técnica!",
+  "embasamentoNormativo": [
+    {
+      "documento": "regulamento_pavimentacao_tapa_buraco.md",
+      "artigo": "Decreto Municipal nº 59.150/2019",
+      "trecho": "Vias estruturais, avenidas arteriais ou corredores com tráfego intenso: Prazo máximo de 24 horas para reparo asfáltico a quente (CBUQ)..."
+    }
+  ],
+  "acoesRecomendadas": [
+    "Abrir chamado no ZelaFix na categoria Buraco na Rua",
+    "Fotografar a via com enquadramento de escala para evidência técnica",
+    "Verificar se há vazamento de água subterrânea no local"
+  ],
+  "sugestaoAberturaChamado": true,
+  "categoriaSugerida": "Buraco na Rua"
 }
 ```
 

@@ -143,3 +143,4 @@ class ChatCidadaoService:
             sugestaoAberturaChamado=sugestao_abertura,
             categoriaSugerida=categoria_identificada
         )
+
