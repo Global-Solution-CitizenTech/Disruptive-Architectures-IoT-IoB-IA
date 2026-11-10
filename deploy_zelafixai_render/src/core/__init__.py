@@ -1,0 +1,38 @@
+"""
+Pacote Core
+"""
+from src.core.config import (
+    APP_TITLE,
+    APP_DESCRIPTION,
+    APP_VERSION,
+    GROQ_MODEL,
+    GEMINI_MODEL,
+    AI_PROVIDER,
+    FALLBACK_PROVIDER,
+    GROQ_API_KEY,
+    GEMINI_API_KEY,
+    PORT,
+    CORS_ORIGINS,
+    CORS_CREDENTIALS,
+    CORS_METHODS,
+    CORS_HEADERS,
+)
+from src.core.prompts import SYSTEM_INSTRUCTION
+
+__all__ = [
+    "APP_TITLE",
+    "APP_DESCRIPTION",
+    "APP_VERSION",
+    "GROQ_MODEL",
+    "GEMINI_MODEL",
+    "AI_PROVIDER",
+    "FALLBACK_PROVIDER",
+    "GROQ_API_KEY",
+    "GEMINI_API_KEY",
+    "PORT",
+    "CORS_ORIGINS",
+    "CORS_CREDENTIALS",
+    "CORS_METHODS",
+    "CORS_HEADERS",
+    "SYSTEM_INSTRUCTION",
+]
