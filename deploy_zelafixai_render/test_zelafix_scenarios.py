@@ -66,15 +66,23 @@ def testar_cenario(numero: int, titulo: str, condicao: bool, detalhes: str = "",
 
 
 def criar_imagem_teste_base64() -> str:
-    """Gera uma imagem PNG de 64x64 em memória para teste multimodal."""
+    """Gera uma cena sintética (256x256) de via asfaltada com cratera para teste multimodal."""
     try:
-        from PIL import Image
-        img = Image.new("RGB", (64, 64), color=(180, 40, 40))
+        from PIL import Image, ImageDraw
+        img = Image.new("RGB", (256, 256), color=(72, 75, 82))
+        draw = ImageDraw.Draw(img)
+        # Faixa amarela central da via e meio-fio claro
+        draw.rectangle((0, 0, 255, 22), fill=(195, 195, 190))
+        draw.rectangle((120, 40, 134, 95), fill=(235, 195, 45))
+        draw.rectangle((120, 165, 134, 230), fill=(235, 195, 45))
+        # Cratera/buraco irregular no asfalto com borda quebrada e fundo terroso
+        draw.polygon([(58, 108), (112, 86), (176, 102), (188, 148), (138, 178), (74, 162)], fill=(28, 22, 18), outline=(145, 140, 130), width=4)
+        draw.ellipse((86, 112, 160, 156), fill=(62, 42, 24))
         buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=85)
+        img.save(buf, format="JPEG", quality=88)
         return base64.b64encode(buf.getvalue()).decode("utf-8")
     except Exception:
-        # Fallback para um header mínimo de JPEG 32x32 se PIL não disponível
+        # Fallback para um PNG mínimo 64x64 se PIL não disponível
         return "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAPElEQVR42u3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC4GBU0AAGl9jSCAAAAAElFTkSuQmCC"
 
 
@@ -146,7 +154,9 @@ def executar_local(delay: float):
     resp_4 = ChatService.processar_chat(req_4)
     testar_cenario(
         4, "Consulta Conversacional de Chamado Real no Oracle FIAP (#2)",
-        "2" in resp_4.resposta and ("buraco" in resp_4.resposta.lower() or "aberto" in resp_4.resposta.lower() or "pinheiros" in resp_4.resposta.lower() or "chamado" in resp_4.resposta.lower()),
+        "2" in resp_4.resposta
+        and ("buraco" in resp_4.resposta.lower() or "aberto" in resp_4.resposta.lower() or "pinheiros" in resp_4.resposta.lower())
+        and "não localiz" not in resp_4.resposta.lower(),
         f"Resposta integrada ao Oracle: {resp_4.resposta[:95]}...",
         delay
     )
@@ -253,9 +263,10 @@ def executar_local(delay: float):
     )
     resp_visao = TriagemService.realizar_triagem(req_visao)
     teve_visao = resp_visao.analise_visual is not None and len(resp_visao.analise_visual) > 5
+    usou_groq = "Groq" in resp_visao.origem_triagem
     testar_cenario(
         10, "Visão Computacional Multimodal (Groq Qwen 3.8 27B)",
-        resp_visao.prioridade in ["MEDIA", "ALTA", "URGENTE"],
+        resp_visao.prioridade in ["MEDIA", "ALTA", "URGENTE"] and (teve_visao or not usou_groq),
         f"Laudo Visual: {resp_visao.analise_visual[:80] if teve_visao else 'Triagem executada via motor de contingência'}",
         delay
     )

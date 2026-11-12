@@ -12,7 +12,7 @@ from src.utils.text import normalizar_texto
 logger = logging.getLogger("ZelaFixAI.ChamadoOracleService")
 
 _PADRAO_CHAMADO_ID = re.compile(
-    r"(?:chamado|ocorr[eê]ncia|protocolo)\s*(?:n[ºo°]?|#)?\s*(\d+)",
+    r"(?:chamado|ocorr[eê]ncia|protocolo)\s*(?:d[eo]\s*)?(?:n[úu]mero|num\.?|n[ºo°]\.?|id|#)?\s*(\d+)",
     re.IGNORECASE
 )
 _PADRAO_LISTAGEM = re.compile(
