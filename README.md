@@ -21,11 +21,12 @@
 
 ## 🔗 2. Links Oficiais da Entrega
 
+* **API em Produção (Render Cloud):** [https://disruptive-architectures-iot-iob-ia-mpl5.onrender.com](https://disruptive-architectures-iot-iob-ia-mpl5.onrender.com/)
+* **Swagger OpenAPI (Produção):** [https://disruptive-architectures-iot-iob-ia-mpl5.onrender.com/docs](https://disruptive-architectures-iot-iob-ia-mpl5.onrender.com/docs)
+* **Health Check & Telemetria:** [`/health`](https://disruptive-architectures-iot-iob-ia-mpl5.onrender.com/health) | [`/ai/vector-store/status`](https://disruptive-architectures-iot-iob-ia-mpl5.onrender.com/ai/vector-store/status) | [`/ai/oracle/status`](https://disruptive-architectures-iot-iob-ia-mpl5.onrender.com/ai/oracle/status)
 * **Repositório GitHub Oficial:** [https://github.com/Global-Solution-CitizenTech/Disruptive-Architectures-IoT-IoB-IA](https://github.com/Global-Solution-CitizenTech/Disruptive-Architectures-IoT-IoB-IA)
-* **Microsserviço de Produção (FastAPI / Render):** [`deploy_zelafixai_render`](./deploy_zelafixai_render)
+* **Microsserviço FastAPI:** [`deploy_zelafixai_render`](./deploy_zelafixai_render)
 * **Documentação de Entrega Formal (.txt):** [`ENTREGA_GS_2026_2.txt`](./ENTREGA_GS_2026_2.txt)
-* **Swagger OpenAPI Interativo:** `http://localhost:8000/docs` (local) ou `/docs` em nuvem
-* **Health Check & Telemetria:** `http://localhost:8000/health` | `http://localhost:8000/ai/vector-store/status`
 
 ---
 
