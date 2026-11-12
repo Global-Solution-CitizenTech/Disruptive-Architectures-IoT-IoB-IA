@@ -1,14 +1,13 @@
 """
-Cliente de Conexão com o Banco de Dados Oracle FIAP (Modo Thin) — ZelaFix AI
+Cliente de Conexão com o Banco de Dados Oracle FIAP (Modo Thin — Somente Leitura) — ZelaFix AI
 Global Solution 2 — Disruptive Architectures: IoT, IoB & Generative IA (FIAP 2TDSPG)
 
-Permite que o ZelaFix AI consulte chamados reais, status atual e engajamento comunitário (IoB)
-diretamente na base de dados oficial da solução CitizenTech.
+Executa exclusivamente consultas SELECT parametrizadas com limites e timeouts defensivos.
 """
 import os
-import re
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
+from src.core.config import ORACLE_USER, ORACLE_PASSWORD, ORACLE_URL, ORACLE_DSN
 
 logger = logging.getLogger("ZelaFixAI.OracleClient")
 
@@ -24,49 +23,50 @@ except ImportError:
 
 class OracleClient:
     """
-    Gerenciador de acesso ao banco de dados relacional Oracle da FIAP.
-    Executa queries parametrizadas com tratamento rigoroso de exceções e timeout.
+    Gerenciador SOMENTE LEITURA de acesso ao banco relacional Oracle da FIAP.
+    Todas as operações utilizam exclusivamente SELECT com bind variables e timeouts.
     """
 
     @classmethod
     def _obter_config(cls) -> Dict[str, Any]:
-        """Extrai os parâmetros de conexão a partir do ambiente ou padrões FIAP."""
-        user = os.environ.get("ORACLE_USER", "rm566422").strip()
-        password = os.environ.get("ORACLE_PASSWORD", "201006").strip()
-        url = os.environ.get("ORACLE_URL", "").strip()
+        """Obtém os parâmetros Oracle a partir das variáveis de ambiente carregadas no config."""
+        user = os.environ.get("ORACLE_USER", ORACLE_USER).strip()
+        password = os.environ.get("ORACLE_PASSWORD", ORACLE_PASSWORD).strip()
+        url = os.environ.get("ORACLE_URL", ORACLE_URL).strip()
+        dsn = os.environ.get("ORACLE_DSN", ORACLE_DSN).strip() or "oracle.fiap.com.br:1521/orcl"
 
-        # DSN padrão para o cluster de banco de dados da FIAP
-        dsn = "oracle.fiap.com.br:1521/orcl"
         if url and "@//" in url:
-            # Extrai host:port/service de jdbc:oracle:thin:@//oracle.fiap.com.br:1521/orcl
             partes = url.split("@//")
-            if len(partes) > 1:
+            if len(partes) > 1 and partes[1].strip():
                 dsn = partes[1].strip()
-        elif os.environ.get("ORACLE_DSN"):
-            dsn = os.environ.get("ORACLE_DSN").strip()
 
         return {
             "user": user,
             "password": password,
-            "dsn": dsn
+            "dsn": dsn,
         }
 
     @classmethod
     def _conectar(cls):
-        """Estabelece conexão com o Oracle com timeout seguro."""
+        """Estabelece conexão com o Oracle com timeouts defensivos de rede e query."""
         if not HAS_ORACLE:
             return None
         cfg = cls._obter_config()
         if not cfg["user"] or not cfg["password"]:
             return None
         try:
-            return oracledb.connect(
+            conn = oracledb.connect(
                 user=cfg["user"],
                 password=cfg["password"],
                 dsn=cfg["dsn"],
                 tcp_connect_timeout=3.0,
-                expire_time=5
+                expire_time=5,
             )
+            try:
+                conn.call_timeout = 5000
+            except Exception:
+                pass
+            return conn
         except Exception as e:
             logger.warning(f"Falha ao conectar no Oracle ({cfg['dsn']}): {e}")
             return None
@@ -101,20 +101,21 @@ class OracleClient:
                 pass
 
     @classmethod
-    def obter_chamado_completo(cls, id_chamado: int) -> Optional[Dict[str, Any]]:
+    def consultar_chamado_com_status(
+        cls,
+        id_chamado: int,
+        incluir_foto: bool = False
+    ) -> Tuple[Optional[Dict[str, Any]], str]:
         """
-        Consulta os dados detalhados de uma ocorrência no Oracle:
-        - Título, descrição, categoria, logradouro, número, bairro, CEP
-        - Status oficial mais recente no histórico (HIST_CHAMADO)
-        - Quantidade real de votos comunitários (+1 IoB)
-        - Foto BLOB (se disponível e válida)
+        Consulta (somente SELECT) os dados de um chamado no Oracle e distingue
+        'encontrado', 'nao_encontrado', 'oracle_offline' e 'erro'.
         """
         conn = cls._conectar()
         if not conn:
-            return None
+            return None, "oracle_offline"
 
         query = """
-            SELECT 
+            SELECT
                 c.id_chamado,
                 c.titulo,
                 c.descricao,
@@ -125,16 +126,16 @@ class OracleClient:
                 b.nm_bairro,
                 c.dt_abertura,
                 (
-                    SELECT s.nm_status 
-                    FROM hist_chamado h 
-                    JOIN status s ON h.status_id_status = s.id_status 
-                    WHERE h.chamado_id_chamado = c.id_chamado 
-                    ORDER BY h.dt_mudanca DESC, h.id_hist DESC 
+                    SELECT s.nm_status
+                    FROM hist_chamado h
+                    JOIN status s ON h.status_id_status = s.id_status
+                    WHERE h.chamado_id_chamado = c.id_chamado
+                    ORDER BY h.dt_mudanca DESC, h.id_hist DESC
                     FETCH FIRST 1 ROWS ONLY
                 ) AS status_atual,
                 (
-                    SELECT COUNT(1) 
-                    FROM voto_chamado v 
+                    SELECT COUNT(1)
+                    FROM voto_chamado v
                     WHERE v.chamado_id_chamado = c.id_chamado
                 ) AS votos_comunitarios,
                 DBMS_LOB.GETLENGTH(c.foto) AS tamanho_foto
@@ -150,11 +151,10 @@ class OracleClient:
                 cursor.execute(query, id_chamado=id_chamado)
                 row = cursor.fetchone()
                 if not row:
-                    return None
+                    return None, "nao_encontrado"
 
                 tam_foto = row[11] or 0
                 tem_foto_valida = tam_foto > 32
-
                 dt_str = row[8].strftime("%d/%m/%Y %H:%M") if row[8] else "Não informada"
 
                 resultado = {
@@ -169,11 +169,11 @@ class OracleClient:
                     "status_atual": row[9] or "ABERTO",
                     "apoios_comunitarios": row[10] or 0,
                     "tem_foto": tem_foto_valida,
-                    "tamanho_foto_bytes": tam_foto
+                    "tamanho_foto_bytes": tam_foto,
                 }
 
-                # Se houver foto válida com tamanho substancial, recupera bytes
-                if tem_foto_valida:
+                # Carrega BLOB apenas sob demanda para economizar rede e RAM
+                if incluir_foto and tem_foto_valida and tam_foto <= 8 * 1024 * 1024:
                     try:
                         cursor.execute("SELECT foto FROM chamado WHERE id_chamado = :id_chamado", id_chamado=id_chamado)
                         blob_row = cursor.fetchone()
@@ -182,10 +182,10 @@ class OracleClient:
                     except Exception as err_blob:
                         logger.warning(f"Erro ao ler BLOB de foto do chamado {id_chamado}: {err_blob}")
 
-                return resultado
+                return resultado, "encontrado"
         except Exception as e:
             logger.warning(f"Erro ao consultar chamado {id_chamado} no Oracle: {e}")
-            return None
+            return None, "erro"
         finally:
             try:
                 conn.close()
@@ -193,25 +193,32 @@ class OracleClient:
                 pass
 
     @classmethod
+    def obter_chamado_completo(cls, id_chamado: int, incluir_foto: bool = False) -> Optional[Dict[str, Any]]:
+        """Retorna os dados do chamado no Oracle ou None se indisponível/inexistente."""
+        dados, _ = cls.consultar_chamado_com_status(id_chamado, incluir_foto=incluir_foto)
+        return dados
+
+    @classmethod
     def listar_chamados_recentes(cls, limit: int = 10, bairro: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Lista os chamados mais recentes cadastrados no Oracle para diagnósticos urbanos."""
+        """Lista os chamados mais recentes cadastrados no Oracle (somente leitura, limitado)."""
         conn = cls._conectar()
         if not conn:
             return []
 
+        limite_seguro = max(1, min(int(limit), 25))
         query = """
-            SELECT 
+            SELECT
                 c.id_chamado,
                 c.titulo,
                 cat.nm_categoria,
                 b.nm_bairro,
                 c.dt_abertura,
                 (
-                    SELECT s.nm_status 
-                    FROM hist_chamado h 
-                    JOIN status s ON h.status_id_status = s.id_status 
-                    WHERE h.chamado_id_chamado = c.id_chamado 
-                    ORDER BY h.dt_mudanca DESC, h.id_hist DESC 
+                    SELECT s.nm_status
+                    FROM hist_chamado h
+                    JOIN status s ON h.status_id_status = s.id_status
+                    WHERE h.chamado_id_chamado = c.id_chamado
+                    ORDER BY h.dt_mudanca DESC, h.id_hist DESC
                     FETCH FIRST 1 ROWS ONLY
                 ) AS status_atual,
                 (SELECT COUNT(1) FROM voto_chamado v WHERE v.chamado_id_chamado = c.id_chamado) AS votos
@@ -228,7 +235,7 @@ class OracleClient:
         try:
             with conn.cursor() as cursor:
                 bairro_like = f"%{bairro}%" if bairro else "%"
-                cursor.execute(query, bairro=bairro, bairro_like=bairro_like, limit=limit)
+                cursor.execute(query, bairro=bairro, bairro_like=bairro_like, limit=limite_seguro)
                 for row in cursor.fetchall():
                     dt_str = row[4].strftime("%d/%m/%Y") if row[4] else ""
                     chamados.append({
@@ -238,7 +245,7 @@ class OracleClient:
                         "bairro": row[3] or "São Paulo",
                         "dt_abertura": dt_str,
                         "status": row[5] or "ABERTO",
-                        "votos": row[6] or 0
+                        "votos": row[6] or 0,
                     })
         except Exception as e:
             logger.warning(f"Erro ao listar chamados no Oracle: {e}")
@@ -249,3 +256,68 @@ class OracleClient:
                 pass
 
         return chamados
+
+    @classmethod
+    def resumo_estatistico_bairro(cls, bairro: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Retorna contagem agregada (SELECT somente leitura) de chamados e votos por categoria.
+        """
+        conn = cls._conectar()
+        if not conn:
+            return {"oracle_online": False, "bairro": bairro, "total_chamados": 0, "total_votos": 0, "por_categoria": {}}
+
+        bairro_limpo = bairro.strip() if bairro and bairro.strip() else None
+        bairro_like = f"%{bairro_limpo}%" if bairro_limpo else "%"
+
+        query_cat = """
+            SELECT
+                NVL(cat.nm_categoria, 'Geral') AS categoria,
+                COUNT(DISTINCT c.id_chamado) AS total
+            FROM chamado c
+            LEFT JOIN categoria cat ON c.categoria_id_categoria = cat.id_categoria
+            LEFT JOIN endereco e ON c.endereco_id_endereco = e.id_endereco
+            LEFT JOIN bairro b ON e.bairro_id_bairro = b.id_bairro
+            WHERE (:bairro IS NULL OR LOWER(b.nm_bairro) LIKE LOWER(:bairro_like))
+            GROUP BY NVL(cat.nm_categoria, 'Geral')
+            ORDER BY total DESC
+            FETCH FIRST 10 ROWS ONLY
+        """
+        query_votos = """
+            SELECT COUNT(1)
+            FROM voto_chamado v
+            JOIN chamado c ON v.chamado_id_chamado = c.id_chamado
+            LEFT JOIN endereco e ON c.endereco_id_endereco = e.id_endereco
+            LEFT JOIN bairro b ON e.bairro_id_bairro = b.id_bairro
+            WHERE (:bairro IS NULL OR LOWER(b.nm_bairro) LIKE LOWER(:bairro_like))
+        """
+
+        por_categoria: Dict[str, int] = {}
+        total_chamados = 0
+        total_votos = 0
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(query_cat, bairro=bairro_limpo, bairro_like=bairro_like)
+                for cat, total in cursor.fetchall():
+                    qtd = int(total or 0)
+                    por_categoria[cat] = qtd
+                    total_chamados += qtd
+
+                cursor.execute(query_votos, bairro=bairro_limpo, bairro_like=bairro_like)
+                row_v = cursor.fetchone()
+                total_votos = int(row_v[0] or 0) if row_v else 0
+
+            return {
+                "oracle_online": True,
+                "bairro": bairro_limpo,
+                "total_chamados": total_chamados,
+                "total_votos": total_votos,
+                "por_categoria": por_categoria,
+            }
+        except Exception as e:
+            logger.warning(f"Erro ao obter resumo estatístico no Oracle: {e}")
+            return {"oracle_online": False, "bairro": bairro_limpo, "total_chamados": 0, "total_votos": 0, "por_categoria": {}}
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass

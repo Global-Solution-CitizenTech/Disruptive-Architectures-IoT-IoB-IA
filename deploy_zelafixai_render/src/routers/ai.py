@@ -3,7 +3,7 @@ Router de IA Generativa, Triagem Urbana e Persistência SQLite — ZelaFix AI
 Global Solution 2 — Disruptive Architectures: IoT, IoB & Generative IA (FIAP 2TDSPG)
 """
 from typing import Optional
-from fastapi import APIRouter, Query, Body
+from fastapi import APIRouter, Query, HTTPException
 from src.schemas.chat import (
     ChatRequest,
     ChatResponse,
@@ -125,11 +125,11 @@ def oracle_status_endpoint() -> dict:
 
 @ai_router.get("/chamados")
 def listar_chamados_oracle_endpoint(
-    limit: int = Query(10, ge=1, le=50, description="Quantidade máxima de chamados"),
+    limit: int = Query(10, ge=1, le=25, description="Quantidade máxima de chamados (limitado a 25)"),
     bairro: Optional[str] = Query(None, description="Filtrar por bairro")
 ) -> dict:
     """
-    Lista os chamados mais recentes cadastrados no banco de dados Oracle da FIAP.
+    Lista os chamados mais recentes cadastrados no banco de dados Oracle da FIAP (somente leitura).
     """
     from src.database.oracle_client import OracleClient
     chamados = OracleClient.listar_chamados_recentes(limit=limit, bairro=bairro)
@@ -141,20 +141,25 @@ def listar_chamados_oracle_endpoint(
 @ai_router.get("/chamados/{id_chamado}")
 def consultar_chamado_oracle_endpoint(id_chamado: int) -> dict:
     """
-    Consulta os dados reais de um chamado diretamente no banco Oracle da FIAP,
-    incluindo status atual, histórico, endereço, contagem de apoios (+1) e parecer técnico automatizado.
+    Consulta (somente leitura) um chamado no banco Oracle FIAP sem baixar BLOBs,
+    retornando 404 se inexistente ou 503 se o Oracle estiver indisponível.
     """
     from src.database.oracle_client import OracleClient
     from src.services.triagem_service import TriagemService
     from src.schemas.chamado import ChamadoContextPayload
     from src.schemas.insights import TriagemRequest
 
-    dados = OracleClient.obter_chamado_completo(id_chamado)
-    if not dados:
-        return {
-            "status": "nao_encontrado",
-            "mensagem": f"Chamado de ID {id_chamado} não foi localizado na base Oracle FIAP."
-        }
+    dados, status_db = OracleClient.consultar_chamado_com_status(id_chamado, incluir_foto=False)
+    if status_db in ("oracle_offline", "erro"):
+        raise HTTPException(
+            status_code=503,
+            detail=f"Banco Oracle FIAP indisponível ao consultar o chamado {id_chamado}."
+        )
+    if not dados or status_db == "nao_encontrado":
+        raise HTTPException(
+            status_code=404,
+            detail=f"Chamado de ID {id_chamado} não foi localizado na base Oracle FIAP."
+        )
 
     payload_chamado = ChamadoContextPayload(
         id=dados["id"],

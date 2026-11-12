@@ -134,19 +134,19 @@ class ChatRepository:
                     parametros.append(chamado_id)
 
                 where_sql = f"WHERE {' AND '.join(filtros)}" if filtros else ""
-                ordem_sql = "ORDER BY id ASC" if filtros else "ORDER BY id DESC"
                 parametros.append(limit)
 
                 cursor.execute(f"""
                     SELECT id, session_id, chamado_id, sender, text, timestamp
                     FROM mensagens_chat
                     {where_sql}
-                    {ordem_sql}
+                    ORDER BY id DESC
                     LIMIT ?
                 """, tuple(parametros))
 
-                rows = cursor.fetchall()
-                return [dict(row) for row in rows]
+                rows = [dict(row) for row in cursor.fetchall()]
+                # Com filtro (sessão/chamado), retorna as N mensagens mais recentes em ordem cronológica
+                return rows[::-1] if filtros else rows
         except Exception as e:
             logger.error(f"Erro ao buscar histórico no SQLite: {e}")
             return []

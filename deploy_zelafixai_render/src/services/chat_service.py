@@ -11,7 +11,7 @@ from typing import Optional, List, Dict, Any
 
 from src.core.config import GROQ_MODEL
 from src.core.prompts import formatar_prompt_rag
-from src.schemas.chat import ChatRequest, ChatResponse, RetrievedSource
+from src.schemas.chat import ChatRequest, ChatResponse, RetrievedSource, MensagemHistorico
 from src.services.knowledge_service import KnowledgeService
 from src.services.groq_service import GroqService
 from src.services.chamado_oracle_service import ChamadoOracleService
@@ -33,26 +33,72 @@ class ChatService:
     """
 
     @classmethod
+    def _gerar_acoes_recomendadas(
+        cls,
+        categoria: str,
+        chamado_id: Optional[int],
+        tem_oracle: bool
+    ) -> List[str]:
+        """Gera recomendações cívicas contextuais conforme categoria RAG e chamado ativo."""
+        mapa_acoes = {
+            "pavimentacao": [
+                "Registrar foto evidenciando profundidade e risco na via pelo app ZelaFix",
+                "Acompanhar prazo de tapa-buraco (24h a 48h) após abertura do protocolo",
+            ],
+            "drenagem": [
+                "Não descartar lixo em sarjetas e solicitar hidrojateamento pelo ZelaFix",
+                "Evitar atravessar pontos alagados e acionar Defesa Civil (199) em risco",
+            ],
+            "iluminacao": [
+                "Informar poste apagado para atendimento da Ilumina SP (24h a 48h)",
+                "Se houver fio partido ou faísca, isolar a área e ligar Bombeiros (193)",
+            ],
+            "limpeza_urbana": [
+                "Descartar até 1 m³/dia gratuitamente no Ecoponto mais próximo",
+                "Consultar calendário do Cata-Bagulho ou denunciar descarte irregular via SP156",
+            ],
+            "manejo_arboreo": [
+                "Solicitar vistoria agronômica para poda preventiva pela Subprefeitura",
+                "Em galho encostando na rede elétrica, acionar Enel / Bombeiros (193)",
+            ],
+            "sinalizacao_transito": [
+                "Reportar semáforo apagado imediatamente para despacho da CET (2h a 4h)",
+                "Informar cruzamento exato e logradouros afetados no app ZelaFix",
+            ],
+            "saneamento": [
+                "Em vazamento contínuo de água ou esgoto, acionar emergência Sabesp (195)",
+                "Registrar foto do ponto exato pelo ZelaFix para controle de erosão",
+            ],
+        }
+        acoes = list(mapa_acoes.get(categoria, [
+            "Registrar a ocorrência com localização exata e foto no app ZelaFix",
+            "Recorrer à Ouvidoria Geral (SP156) se o prazo regulamentar expirar",
+        ]))
+        if tem_oracle and chamado_id:
+            acoes.append(f"Compartilhar o chamado #{chamado_id} com vizinhos para somar apoios (+1)")
+        else:
+            acoes.append("Mobilizar apoios (+1) da vizinhança para elevar a prioridade do chamado")
+        return acoes
+
+    @classmethod
     def _finalizar_e_persistir(
         cls,
         resp: ChatResponse,
-        request: ChatRequest,
+        pergunta_segura: str,
         session_id: str,
         chamado_id: Optional[int],
         bairro: Optional[str]
     ) -> ChatResponse:
-        """Persiste mensagem de entrada e resposta de auditoria no SQLite local."""
+        """Persiste mensagem sanitizada (LGPD) e auditoria no SQLite local."""
         resp.sessionId = session_id
 
-        # Salva mensagem do munícipe
         ChatRepository.salvar_mensagem(
             session_id=session_id,
             chamado_id=chamado_id,
             sender="user",
-            text=request.pergunta
+            text=pergunta_segura
         )
 
-        # Salva resposta do ZelaBot
         ChatRepository.salvar_mensagem(
             session_id=session_id,
             chamado_id=chamado_id,
@@ -60,13 +106,12 @@ class ChatService:
             text=resp.resposta
         )
 
-        # Registra parecer de auditoria
         parecer_audit = (resp.resposta[:147] + "...") if len(resp.resposta) > 150 else resp.resposta
         ChatRepository.salvar_triagem_audit(
             session_id=session_id,
             chamado_id=chamado_id,
             bairro=bairro or "São Paulo - SP",
-            titulo=request.pergunta[:80],
+            titulo=pergunta_segura[:80],
             parecer_ia=parecer_audit,
             categoria=resp.categoria,
             prioridade=resp.urgencia.upper(),
@@ -127,22 +172,45 @@ class ChatService:
 
     @classmethod
     def processar_chat(cls, request: ChatRequest) -> ChatResponse:
-        session_id = request.sessionId or f"sess_{uuid.uuid4().hex[:12]}"
+        sessao_existente = bool(request.sessionId and request.sessionId.strip())
+        session_id = request.sessionId.strip() if sessao_existente else f"sess_{uuid.uuid4().hex[:12]}"
         c = request.chamadoContext
         chamado_id = c.id if c else None
         bairro = c.bairro if c else None
 
         try:
-            pergunta_norm = normalizar_texto(request.pergunta)
+            # 1. Proteção LGPD na entrada ANTES de enviar à LLM, Oracle ou salvar no SQLite
+            pergunta_segura = sanitizar_lgpd(request.pergunta)
+            pergunta_norm = normalizar_texto(pergunta_segura)
 
-            # 1. Identificação de Intenções e Consulta ao Banco Oracle FIAP
-            id_detectado = ChamadoOracleService.extrair_id_chamado_da_pergunta(request.pergunta)
+            # 2. Memória automática multi-turno do SQLite quando cliente envia apenas sessionId
+            historico_para_llm = request.historico
+            if (not historico_para_llm) and sessao_existente:
+                registros_db = ChatRepository.buscar_historico(session_id=session_id, limit=6)
+                if registros_db:
+                    historico_para_llm = [
+                        MensagemHistorico(
+                            sender=row["sender"],
+                            text=sanitizar_lgpd(row["text"])
+                        )
+                        for row in registros_db
+                    ]
+
+            # 3. Consulta somente leitura ao Oracle FIAP (foto BLOB apenas sob demanda visual)
+            id_detectado = ChamadoOracleService.extrair_id_chamado_da_pergunta(pergunta_segura)
             target_id = id_detectado or chamado_id
+            precisa_foto_oracle = any(k in pergunta_norm for k in [
+                "foto", "imagem", "analis", "visual", "veja", "mostre", "anexo", "parece"
+            ])
 
             contexto_chamado_str, dados_oracle = ChamadoOracleService.obter_contexto_chamado_real(
                 id_chamado=target_id,
-                contexto_dto=c
+                contexto_dto=c,
+                incluir_foto=precisa_foto_oracle,
+                pergunta=pergunta_segura
             )
+            if contexto_chamado_str:
+                contexto_chamado_str = sanitizar_lgpd(contexto_chamado_str)
 
             if dados_oracle:
                 chamado_id = dados_oracle["id"]
@@ -159,8 +227,8 @@ class ChatService:
                 "ajuda com meu bairro", "dicas de zeladoria", "o que voce sabe fazer"
             ])
 
-            # 2. Recuperação de Chunks Normativos via RAG
-            resultado_rag = KnowledgeService.buscar_chunks_rag(request.pergunta, top_k=3)
+            # 4. Recuperação de Chunks Normativos via RAG
+            resultado_rag = KnowledgeService.buscar_chunks_rag(pergunta_segura, top_k=3)
             chunks_recuperados = resultado_rag["chunks"]
             match_found = resultado_rag["match_found"]
 
@@ -181,31 +249,29 @@ class ChatService:
                 for chunk in chunks_recuperados
             ]
 
-            # 3. Extração de Foto para Visão Computacional Multimodal (Groq Qwen 3.8 27B)
+            # 5. Foto para Visão Computacional Multimodal (app ou BLOB do Oracle sob demanda)
             imagem_para_inferencia: Optional[Any] = (
                 request.foto_base64
                 or (c.foto_base64 if c else None)
                 or (dados_oracle.get("foto_bytes") if dados_oracle else None)
             )
 
-            # 4. Montagem do Prompt Fundamentado
+            # 6. Montagem do Prompt Fundamentado e Inferência Multimodal Groq Qwen 3.8 27B
             prompt_fundamentado = formatar_prompt_rag(
-                pergunta=request.pergunta,
+                pergunta=pergunta_segura,
                 contexto_chamado_str=contexto_chamado_str,
                 chunks_recuperados=chunks_recuperados,
                 match_found=match_found,
-                is_chamado_info_query=is_chamado_info_query,
-                is_general_query=is_general_query
+                is_chamado_info_query=is_chamado_info_query
             )
 
             origem_ia = ""
             resposta_ia = None
 
-            # 5. Inferência Primária com Groq Cloud (Qwen 3.8 27B Multimodal)
             try:
                 resposta_ia = GroqService.gerar_resposta(
                     prompt_atual=prompt_fundamentado,
-                    historico=request.historico,
+                    historico=historico_para_llm,
                     imagem_base64=imagem_para_inferencia
                 )
                 if resposta_ia:
@@ -213,10 +279,9 @@ class ChatService:
             except Exception as e:
                 logger.warning(f"Falha na chamada do Groq ({GROQ_MODEL}): {e}")
 
-            # 6. Motor Heurístico Local Resiliente (Fallback Offline)
             if not resposta_ia:
                 resposta_ia = cls._gerar_resposta_fallback_local(
-                    request.pergunta,
+                    pergunta_segura,
                     chunks_recuperados,
                     contexto_chamado_str
                 )
@@ -226,15 +291,13 @@ class ChatService:
             resposta_tratada = sanitizar_lgpd(resposta_ia)
             resposta_limpa = limpar_texto_mobile(resposta_tratada)
 
-            # 9. Definição da Categoria e Urgência do Response
             categoria_resp = chunks_recuperados[0]["category"] if chunks_recuperados else "zeladoria"
             urgencia_resp = chunks_recuperados[0].get("urgency", "baixa") if chunks_recuperados else "baixa"
-
-            acoes_recomendadas = [
-                "Cadastrar relato detalhado com fotos no app ZelaFix",
-                "Solicitar confirmação e apoios de outros vizinhos (+1)",
-                "Acompanhar o prazo de execução via protocolo oficial"
-            ]
+            acoes_recomendadas = cls._gerar_acoes_recomendadas(
+                categoria_resp,
+                chamado_id=chamado_id,
+                tem_oracle=bool(dados_oracle)
+            )
 
             chat_response = ChatResponse(
                 resposta=resposta_limpa,
@@ -246,7 +309,7 @@ class ChatService:
                 rag_grounded=match_found and len(sources_used) > 0
             )
 
-            return cls._finalizar_e_persistir(chat_response, request, session_id, chamado_id, bairro)
+            return cls._finalizar_e_persistir(chat_response, pergunta_segura, session_id, chamado_id, bairro)
 
         except Exception as e:
             logger.error(f"Erro inesperado no ChatService: {e}")
