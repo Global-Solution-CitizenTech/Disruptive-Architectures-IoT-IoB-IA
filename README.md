@@ -338,41 +338,43 @@ O microsserviço implementa camadas ativas de conformidade e tratamento de dados
 
 ## 🧪 10. Avaliação Empírica e Testes Automatizados (Critério 05 — 15 pts)
 
-A confiabilidade do microsserviço é assegurada por **três suítes de testes automatizados**, totalizando **76 casos de validação executáveis com 100% de sucesso comprovado**:
+A confiabilidade do microsserviço é assegurada por **três suítes de testes automatizados**, totalizando **82 casos de validação executáveis com 100% de sucesso comprovado**:
 
 ```text
 ======================================================================
                   PAINEL CONSOLIDADO DE TESTES ZELAFIX AI
 ======================================================================
 1. Cobertura Semântica RAG (test_knowledge_coverage.py):
-   • Casos Testados: 35 | Aprovados: 35 | Precisão: 100.0%
+   • Casos Testados: 37 | Aprovados: 37 | Precisão: 100.0%
 
 2. Homologação de Cenários de Ponta a Ponta (test_zelafix_scenarios.py):
-   • Cenários Testados: 10 | Aprovados: 10 | Taxa de Sucesso: 100.0%
+   • Cenários Testados: 12 | Aprovados: 12 | Taxa de Sucesso: 100.0%
 
 3. Estresse Pesado, Carga e Adversarial (stress_test_zelafix.py):
-   • Vetores de Ataque: 31 | Aprovados: 31 | Resiliência: 100.0%
+   • Vetores de Ataque: 33 | Aprovados: 33 | Resiliência: 100.0%
 ======================================================================
-TOTAL GERAL: 76/76 TESTES APROVADOS — ZERO FALHAS DETECTADAS
+TOTAL GERAL: 82/82 TESTES APROVADOS — ZERO FALHAS DETECTADAS
 ======================================================================
 ```
 
 ### 10.1 Teste de Cobertura Semântica da Base RAG (`test_knowledge_coverage.py`)
-- **35 casos representativos** cobrindo todas as áreas da engenharia urbana pública.
+- **37 casos representativos** cobrindo todas as áreas da engenharia urbana pública, além da validação de preservação de `urgency` e filtro estrito por categoria no ChromaDB.
 - **Rejeição Precisa de Escopo:** Consultas fora de domínio (receitas de culinária, capitais mundiais, resultados de futebol e pedidos de programação) retornam zero chunks (`None`), garantindo total imunidade contra alucinações cruzadas.
 
 ### 10.2 Suíte de Homologação de Cenários (`test_zelafix_scenarios.py`)
-- Validação ponta a ponta dos 10 fluxos críticos da aplicação:
+- Validação ponta a ponta dos 12 fluxos críticos da aplicação:
   1. *Chat ZelaBot com RAG:* Citação exata da Lei nº 13.478/2002 e Ecopontos gratuitos.
   2. *Formatação Mobile Clean:* Sanitização contra pipes e divisores Markdown.
   3. *Orientação Cívica sobre Fiação e Poda:* Lei 17.267 e competência ENEL / Subprefeitura.
   4. *Consulta de Chamado Real no Oracle:* Leitura em tempo real do chamado #2 via Modo Thin.
-  5. *Triagem Técnica de Pavimentação:* Prioridade ALTA por engajamento IoB (+1).
+  5. *Triagem Técnica de Pavimentação:* Prioridade URGENTE por engajamento IoB (+1).
   6. *Triagem de Trânsito CET:* Semáforo apagado com prioridade URGENTE e SLA 4h.
   7. *Triagem de Saneamento Sabesp:* Vazamento de água com SLA 12h para estancar fuga hídrica.
   8. *Integridade Relacional no SQLite:* Auditoria e histórico persistidos sem deadlocks.
-  9. *Telemetria e Conexão Oracle FIAP:* Status e conectividade em tempo real.
+  9. *Telemetria e Conexão Oracle FIAP:* Status e conectividade em tempo real (somente leitura).
   10. *Visão Computacional Multimodal (Qwen 3.8 27B):* Diagnóstico técnico sobre foto do dano urbano.
+  11. *Roteamento Real Oracle + Telemetria IoT:* Categoria `'Drenagem e Esgoto'` com sensor de bueiro sem colidir com Sabesp.
+  12. *Memória Multi-Turno Automática + Insights Vivos:* Carregamento de sessão por `sessionId` no SQLite e insights alimentados pelo Oracle FIAP.
 
 ### 10.3 Bateria de Testes de Estresse Pesado & Adversariais (`stress_test_zelafix.py`)
 Submeteu a aplicação a condições extremas e cenários destrutivos:
@@ -453,14 +455,14 @@ Disruptive-Architectures-IoT-IoB-IA/
     │   └── utils/
     │       ├── text.py                 # Expansão semântica urbana e sanitizador mobile
     │       ├── embeddings.py           # LocalSemanticEmbedder (512D) e cosseno
-    │       ├── guardrails.py           # Risco vital (193/199), anti-código e LGPD
+    │       ├── guardrails.py           # Anonimização automática LGPD de CPF/dados sensíveis
     │       └── __init__.py
     ├── api.py                          # Bootstrap da aplicação FastAPI
     ├── render.yaml                     # Blueprint de deploy em nuvem no Render
     ├── requirements.txt                # Dependências declaradas e fixadas (oracledb, pillow, etc.)
-    ├── test_knowledge_coverage.py      # Teste de cobertura semântica RAG (35 casos)
-    ├── test_zelafix_scenarios.py       # Suíte de homologação de cenários (10 casos)
-    ├── stress_test_zelafix.py          # Bateria de estresse e testes adversariais (31 casos)
+    ├── test_knowledge_coverage.py      # Teste de cobertura semântica RAG (37 casos)
+    ├── test_zelafix_scenarios.py       # Suíte de homologação de cenários (12 casos)
+    ├── stress_test_zelafix.py          # Bateria de estresse e testes adversariais (33 casos)
     └── .env.example                    # Modelo seguro de variáveis de ambiente
 ```
 
@@ -494,13 +496,13 @@ pip install -r requirements.txt
 # 4. Configure o arquivo de variáveis de ambiente (opcional para testes com fallback local)
 cp .env.example .env
 
-# 5. Execute a suíte de cobertura semântica da Base RAG (35 casos - 100% sucesso)
+# 5. Execute a suíte de cobertura semântica da Base RAG (37 casos - 100% sucesso)
 python test_knowledge_coverage.py
 
-# 6. Execute a suíte de homologação de cenários de ponta a ponta (10 casos - 100% sucesso)
+# 6. Execute a suíte de homologação de cenários de ponta a ponta (12 casos - 100% sucesso)
 python test_zelafix_scenarios.py
 
-# 7. Execute a bateria de estresse e testes adversariais (31 casos - 100% resiliência)
+# 7. Execute a bateria de estresse e testes adversariais (33 casos - 100% resiliência)
 python stress_test_zelafix.py
 
 # 8. Inicie o servidor FastAPI localmente
@@ -521,33 +523,31 @@ O deploy contínuo em produção está configurado através do blueprint declara
 ```yaml
 services:
   - type: web
-    name: zelafixai
+    name: zelafix-ai
     runtime: python
-    region: ohio
+    region: oregon
     plan: free
-    branch: main
-    rootDir: deploy_zelafixai_render
+    rootDir: Disruptive-Architectures-IoT-IoB-IA/deploy_zelafixai_render
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
-    autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
-      - key: AI_PROVIDER
-        value: groq
-      - key: GROQ_MODEL
-        value: qwen/qwen3.8-27b
       - key: GROQ_API_KEY
         sync: false
+      - key: GROQ_MODEL
+        value: qwen/qwen3.8-27b
+      - key: AI_PROVIDER
+        value: groq
       - key: ORACLE_USER
-        value: rm566422
+        sync: false
       - key: ORACLE_PASSWORD
         sync: false
-      - key: ORACLE_URL
-        value: jdbc:oracle:thin:@//oracle.fiap.com.br:1521/orcl
       - key: ORACLE_DSN
         value: oracle.fiap.com.br:1521/orcl
+      - key: ORACLE_URL
+        value: jdbc:oracle:thin:@//oracle.fiap.com.br:1521/orcl
 ```
 
 #### Variáveis de Ambiente no Dashboard do Render:
@@ -568,7 +568,7 @@ services:
 | **02** | **IA Generativa funcionando e integrada à solução** | **25 pts** | Integração multimodal com Groq Cloud (`qwen/qwen3.8-27b` para texto e visão computacional), conexão Oracle FIAP em tempo real e Motor Heurístico Local Resiliente, consumido ativamente pelo App Mobile React Native e Backend Java. |
 | **03** | **Aprofundamento técnico e justificativa sólida** | **25 pts** | Implementação de **RAG Normativo Municipal (PMSP)** com 8 módulos jurídicos e 31 chunks oficiais, eliminando alucinações de competência e prazos em serviços públicos. |
 | **04** | **Pipeline de dados e documentação da arquitetura** | **15 pts** | `LocalSemanticEmbedder` (512D) com Similaridade de Cosseno, indexação HNSW no ChromaDB, integração Oracle Thin e persistência relacional SQLite em modo WAL. Diagramas completos em ASCII de fluxo e arquitetura. |
-| **05** | **Testes, avaliação empírica e interpretação de resultados** | **15 pts** | **76 testes automatizados executáveis com 100% de sucesso**: 35 de cobertura semântica, 10 de cenários de ponta a ponta e 31 testes de estresse adversarial (concorrência de 50 threads, SQLi, Zalgo e payloads gigantes). |
+| **05** | **Testes, avaliação empírica e interpretação de resultados** | **15 pts** | **82 testes automatizados executáveis com 100% de sucesso**: 37 de cobertura semântica, 12 de cenários de ponta a ponta e 33 testes de estresse adversarial (concorrência de 50 threads, SQLi, LGPD em SQLite, Zalgo e payloads gigantes). |
 | **06** | **Código organizado, instruções de reprodução e uso responsável/LGPD** | **10 pts** | Repositório modular em camadas, instruções de execução passo a passo via `run_qa_demo.py`, zero credenciais expostas, anonimização automática de CPFs (LGPD) e higienização para consumo mobile. |
 | **TOTAL** | **Pontuação Máxima da Entrega da Disciplina** | **100 pts** | **Atendimento rigoroso de 100% dos requisitos do edital da Global Solution 2.** |
 

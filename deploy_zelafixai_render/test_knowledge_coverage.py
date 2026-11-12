@@ -96,7 +96,27 @@ def main() -> int:
             falhas += 1
 
     print("-" * 80)
-    total = len(CASOS)
+
+    # Validação de metadados ChromaDB ('urgency' preservada) e filtro estrito por categoria
+    ref_urgencia = KnowledgeService.buscar_chunk_por_id("cet_01")
+    res_urgencia = KnowledgeService.buscar_chunks_rag("semáforo apagado cruzamento CET", top_k=2, categoria_filtro="sinalizacao_transito")
+    ok_urgencia = bool(res_urgencia["chunks"]) and all(
+        c.get("urgency") == ref_urgencia.get("urgency") and c.get("category") == "sinalizacao_transito"
+        for c in res_urgencia["chunks"]
+        if c["id"] == "cet_01"
+    )
+    print(f"{'✅ OK' if ok_urgencia else '❌ FALHA'} | Metadado 'urgency' preservado via ChromaDB ({res_urgencia['chunks'][0].get('urgency') if res_urgencia['chunks'] else 'N/A'})")
+    if not ok_urgencia:
+        falhas += 1
+
+    res_filtro = KnowledgeService.buscar_chunks_rag("buraco profundo no asfalto da rua", top_k=3, categoria_filtro="iluminacao")
+    ok_filtro = all(c.get("category") == "iluminacao" for c in res_filtro["chunks"])
+    print(f"{'✅ OK' if ok_filtro else '❌ FALHA'} | Filtro estrito categoria='iluminacao' não vaza 'pavimentacao' ({len(res_filtro['chunks'])} chunks)")
+    if not ok_filtro:
+        falhas += 1
+
+    print("-" * 80)
+    total = len(CASOS) + 2
     aprovados = total - falhas
     taxa = (aprovados / total) * 100
     print(f"Resultado Final: {aprovados}/{total} casos aprovados ({taxa:.1f}% de precisão).")

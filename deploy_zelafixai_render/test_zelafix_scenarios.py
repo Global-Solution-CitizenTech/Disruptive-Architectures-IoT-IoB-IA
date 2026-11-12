@@ -79,7 +79,7 @@ def criar_imagem_teste_base64() -> str:
 
 
 def executar_local(delay: float):
-    from src.schemas.chamado import ChamadoContextPayload
+    from src.schemas.chamado import ChamadoContextPayload, TelemetriaIotPayload
     from src.schemas.chat import ChatRequest
     from src.schemas.insights import TriagemRequest
     from src.services.chat_service import ChatService
@@ -260,8 +260,53 @@ def executar_local(delay: float):
         delay
     )
 
+    # Cenário 11: Roteamento Real 'Drenagem e Esgoto' + Telemetria IoT (sem colidir com Sabesp)
+    req_iot = TriagemRequest(
+        chamado=ChamadoContextPayload(
+            id=106,
+            categoria="Drenagem e Esgoto",
+            titulo="Bueiro com acúmulo de folhas e sensor indicando transbordo",
+            descricao="Nível da galeria pluvial acima do limiar após chuva forte.",
+            bairro="Bela Vista",
+            apoios_comunitarios=4,
+            telemetria_iot=TelemetriaIotPayload(
+                device_id="IOT-BUEIRO-09",
+                tipo_sensor="ultrassom_bueiro",
+                valor_medido=92.5,
+                unidade="%",
+                anomalia_detectada=True,
+            ),
+        )
+    )
+    resp_iot = TriagemService.realizar_triagem(req_iot)
+    ok_dren_iot = (
+        ("Drenagem" in resp_iot.orgao_responsavel or "SIURB" in resp_iot.orgao_responsavel or "Subprefeitura" in resp_iot.orgao_responsavel)
+        and "Sabesp" not in resp_iot.orgao_responsavel
+        and resp_iot.prioridade in ["ALTA", "URGENTE"]
+    )
+    testar_cenario(
+        11, "Triagem 'Drenagem e Esgoto' + Telemetria IoT (sem colisão Sabesp)",
+        ok_dren_iot,
+        f"Prioridade: {resp_iot.prioridade} | Órgão: {resp_iot.orgao_responsavel} | SLA: {resp_iot.sla_sugerido_horas}h",
+        delay
+    )
+
+    # Cenário 12: Memória Multi-Turno Automática via sessionId (SQLite) + Insights Vivos Oracle
+    sess_mem = f"mem_{uuid.uuid4().hex[:6]}"
+    ChatService.processar_chat(ChatRequest(pergunta="Quais chamados estão abertos na base?", sessionId=sess_mem))
+    resp_mem = ChatService.processar_chat(ChatRequest(pergunta="E sobre iluminação pública, qual o prazo?", sessionId=sess_mem))
+    hist_mem = ChatRepository.buscar_historico(session_id=sess_mem, limit=10)
+    insights_bela = InsightsService.gerar_insights_bairro("Bela Vista")
+    ok_mem_ins = len(hist_mem) == 4 and len(resp_mem.resposta) > 15 and insights_bela.total_alertas >= 3
+    testar_cenario(
+        12, "Memória Automática por sessionId (SQLite) & Insights Oracle",
+        ok_mem_ins,
+        f"Mensagens na sessão: {len(hist_mem)} | Insights Bela Vista: {insights_bela.total_alertas} | Origem: {resp_mem.origem_resposta}",
+        delay
+    )
+
     print(f"\n{GRN}{BLD}======================================================================{RST}")
-    print(f"{GRN}{BLD}✅ TODOS OS 10 CENÁRIOS DE HOMOLOGAÇÃO FORAM CONCLUÍDOS COM 100% DE SUCESSO!{RST}")
+    print(f"{GRN}{BLD}✅ TODOS OS 12 CENÁRIOS DE HOMOLOGAÇÃO FORAM CONCLUÍDOS COM 100% DE SUCESSO!{RST}")
     print(f"{GRN}{BLD}======================================================================{RST}\n")
     return 0
 

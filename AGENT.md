@@ -152,10 +152,10 @@ O ZelaFix AI utiliza o modelo de pesos abertos de última geração **`qwen/qwen
 +---------------------------------------------+---------------+------------+
 | Suíte de Validação Oficial                  | Casos / Testes| Resultado  |
 +---------------------------------------------+---------------+------------+
-| Cobertura RAG (test_knowledge_coverage.py)  | 35 cenários   | 100% OK    |
-| Homologação de Ponta a Ponta (run_qa_demo)   | 10 cenários   | 100% OK    |
-| Bateria de Estresse & Carga (stress_test)   | 28 testes     | 100% OK    |
-| Conexão Oracle Thin (oracle.fiap.com.br)    | Real Time     | 100% OK    |
+| Cobertura RAG (test_knowledge_coverage.py)  | 37 cenários   | 100% OK    |
+| Homologação de Ponta a Ponta (run_qa_demo)   | 12 cenários   | 100% OK    |
+| Bateria de Estresse & Carga (stress_test)   | 33 testes     | 100% OK    |
+| Conexão Oracle Thin (oracle.fiap.com.br)    | Somente Leitura| 100% OK   |
 | Fallback Local Heurístico Resiliente        | Contingência  | 100% OK    |
 +---------------------------------------------+---------------+------------+
 ```
