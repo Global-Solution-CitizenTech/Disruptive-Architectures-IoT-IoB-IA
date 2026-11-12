@@ -13,7 +13,6 @@ from src.services.knowledge_service import KnowledgeService
 from src.services.groq_service import GroqService
 from src.database.oracle_client import OracleClient
 from src.repositories.chat_repository import ChatRepository
-from src.utils.guardrails import detectar_emergencia_vital
 from src.utils.text import normalizar_texto
 
 logger = logging.getLogger("ZelaFixAI.TriagemService")
@@ -68,7 +67,9 @@ class TriagemService:
             chunks = resultado_rag.get("chunks", [])
 
             # 2. Heurística Especializada de Domínio Municipal (PMSP)
-            eh_emergencia = detectar_emergencia_vital(texto_completo)
+            eh_critico = any(k in texto_norm for k in [
+                "alta tensao", "choque", "faisca", "fogo", "cratera", "alagamento", "desabamento", "soterramento"
+            ])
 
             # Classificação por órgão municipal competente
             eh_saneamento = any(k in cat_norm for k in ["agua", "esgoto", "saneamento", "sabesp", "vazamento"]) or any(k in texto_norm for k in ["vazamento de agua", "adutora", "cano quebrado", "cano rompido", "cano estourado", "esgoto a ceu aberto", "sabesp", "cavalete", "agua jorrando"])
@@ -187,8 +188,8 @@ class TriagemService:
                 risco = "Impacto no bem-estar e circulação da comunidade local."
                 parecer = "Triagem ZelaFix: Ocorrência cadastrada e encaminhada para vistoria técnica da Subprefeitura."
 
-            # 3. Cálculo de Prioridade com IoB (Apoios Comunitários) e Risco Vital
-            if eh_emergencia or ("CET" in orgao and sla_padrao <= 4):
+            # 3. Cálculo de Prioridade com IoB (Apoios Comunitários) e Criticidade Técnica
+            if eh_critico or ("CET" in orgao and sla_padrao <= 4):
                 prioridade = "URGENTE"
                 sla_padrao = min(sla_padrao, 4)
             elif apoios >= 25 or any(k in texto_norm for k in ["cratera", "enchente", "apagao", "esgoto"]):

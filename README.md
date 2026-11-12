@@ -109,9 +109,7 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 ====================================================================================================
   [ NÚCLEO DE IA GENERATIVA & RAG NORMATIVO MUNICIPAL ]
   ┌───────────────────────────────────────────────────────────────────────────────────────────────┐
-  │ 1. GUARDRAILS DE SEGURANÇA DETERMINÍSTICOS                                                   │
-  │    ├─ Risco Vital Iminente (Choque, Fiação Caída, Soterramento) -> BOMBEIROS 193 / DEFESA 199 │
-  │    ├─ Blindagem Anti-Código (Bloqueia injeções de prompt, scripts e jailbreaks DAN)           │
+  │ 1. HIGIENIZAÇÃO & PROTEÇÃO DE DADOS (LGPD)                                                   │
   │    ├─ Proteção LGPD (Mascaramento em tempo de execução de CPFs e Cartões)                     │
   │    └─ Sanitizador Mobile Clean (Elimina pipes '|' e Markdown bruto para React Native)         │
   ├───────────────────────────────────────────────────────────────────────────────────────────────┤
@@ -155,19 +153,19 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 
 ## 🧠 5. Abordagem de IA Selecionada & Justificativa Técnica
 
-### Por que a Abordagem Híbrida: LLM Especializado + RAG Normativo + Guardrails Determinísticos?
+### Por que a Abordagem Híbrida: LLM Multimodal + RAG Normativo + Motor Resiliente?
 
 Na administração pública e na segurança viária municipal, **alucinações de inteligência artificial são inaceitáveis**:
 - Um modelo de linguagem convencional sem ancoragem normativa poderia alucinar prazos irreais, citar leis revogadas ou enviar equipes da Subprefeitura para reparar adutoras de competência exclusiva da Sabesp ou cabos de média tensão sob concessão da ENEL.
 - Alternativas puramente probabilísticas (classificadores caixa-preta) não oferecem explicabilidade jurídica nem produzem laudos fundamentados.
 - Modelos pesados de Deep Learning (como PyTorch/HuggingFace com 1 GB de footprint) causariam travamento compulsório por falta de memória (**OOM Killer**) no plano gratuito do Render (limite de 512 MB de RAM).
 
-A arquitetura do **ZelaFix AI** resolve esse dilema através da integração de cinco pilares técnicos:
+A arquitetura do **ZelaFix AI** resolve esse dilema através da integração de pilares técnicos objetivos:
 1. **RAG Normativo Fundamentado:** Toda resposta do ZelaBot e todo laudo de triagem técnica é ancorado em decretos, portarias e manuais vigentes da Cidade de São Paulo.
 2. **Provedor Primário Multimodal (Groq Cloud Qwen 3.8 27B):** Utiliza o modelo multimodal de pesos abertos **`qwen/qwen3.8-27b`** via infraestrutura LPU da Groq Cloud, com latência ultra-rápida (~350ms) e capacidade nativa de visão computacional para fotos de defeitos urbanos.
 3. **Integração Real-Time com Banco Oracle FIAP (Modo Thin):** Consulta chamados reais, endereços, contagem de votos comunitários (+1 IoB) e fotos BLOB diretamente no Oracle (`oracle.fiap.com.br:1521/orcl`) em Python nativo e sem binários externos.
 4. **Motor Heurístico Local Resiliente (Fallback Offline):** Em caso de indisponibilidade de rede, cota de tokens (429 Rate Limit) ou ausência de internet, o motor local sintetiza pareceres e respostas técnicas a partir dos chunks recuperados do ChromaDB com latência inferior a 15ms e **zero crashes**.
-5. **Guardrails Determinísticos:** Bloqueiam qualquer tentativa de evasão de escopo, mascaram dados pessoais (LGPD) e acionam telefones de emergência vital (193/199).
+5. **Proteção LGPD & Higienização Mobile:** Mascaramento automático de dados pessoais e formatação limpa para consumo do aplicativo React Native.
 
 ---
 
@@ -245,20 +243,13 @@ deploy_zelafixai_render/src/knowledge/
 
 ---
 
-## 🛡️ 8. Guardrails de Segurança, Risco Vital, Anti-Código & Proteção LGPD
+## 🛡️ 8. Proteção de Dados (LGPD) & Higienização Mobile Clean
 
-O microsserviço implementa quatro camadas ativas de proteção determinística ([`src/utils/guardrails.py`](./deploy_zelafixai_render/src/utils/guardrails.py)):
+O microsserviço implementa camadas ativas de conformidade e tratamento de dados ([`src/utils/guardrails.py`](./deploy_zelafixai_render/src/utils/guardrails.py)):
 
-1. **Guardrail de Emergência Vital (Risco Iminente de Morte):**
-   - Expressões como *"choque elétrico"*, *"fio solto faísca"*, *"árvore caiu em cima de carro"*, *"desabamento"* ou *"eletrocussão"* acionam imediatamente a resposta de emergência institucional:
-   > 🚨 **ALERTA DE SEGURANÇA E RISCO VITAL ZELAFIX:**  
-   > Situações de fiação energizada, árvores tombadas sobre fiação primária ou risco de colapso estrutural apresentam **perigo iminente de morte**.  
-   > **AÇÃO IMEDIATA:** Ligue agora para o **Corpo de Bombeiros (193)** ou para a **Defesa Civil (199)**. Mantenha distância mínima de 10 metros da área.
-2. **Blindagem Anti-Código e Defesa de Escopo:**
-   - Tentativas de injeção de prompt, jailbreaks estilo DAN ou solicitações de scripts (Python, SQL, HTML, JavaScript) são bloqueadas, retornando mensagem cívica amigável que reafirma a finalidade exclusiva do ZelaFix.
-3. **Anonimização Rigorosa de Dados Pessoais (LGPD):**
-   - Padrões de CPF (com pontuação `123.456.789-00` ou dígitos contínuos `12345678900`) e números de cartão de crédito são interceptados por regex e substituídos por `[DADO PESSOAL ANONIMIZADO / LGPD]`.
-4. **Higienização Mobile Clean:**
+1. **Anonimização de Dados Pessoais (LGPD):**
+   - Padrões de CPF (com pontuação `123.456.789-00` ou dígitos contínuos `12345678900`) e números de cartão de crédito são interceptados por regex e substituídos por `[DADO PESSOAL ANONIMIZADO]`.
+2. **Higienização Mobile Clean:**
    - A função `limpar_texto_mobile` remove tabelas de pipes `|`, divisores Markdown e tags incompatíveis, entregando texto limpo perfeitamente renderizável no componente `Text` do React Native sem quebra de layout.
 
 ---
@@ -372,24 +363,23 @@ TOTAL GERAL: 76/76 TESTES APROVADOS — ZERO FALHAS DETECTADAS
 
 ### 10.2 Suíte de Homologação de Cenários (`test_zelafix_scenarios.py`)
 - Validação ponta a ponta dos 10 fluxos críticos da aplicação:
-  1. *ChromaDB e Índice HNSW:* Inicialização estável com 31 chunks vetoriais.
-  2. *Chat ZelaBot com RAG:* Citação exata da Lei nº 13.478/2002 e Ecopontos gratuitos.
-  3. *Formatação Mobile Clean:* Sanitização contra pipes e divisores Markdown.
-  4. *Guardrail de Emergência Vital:* Acionamento de Bombeiros 193 / Defesa Civil 199.
-  5. *Blindagem Anti-Código:* Bloqueio de pedidos de script com mensagem cívica.
-  6. *Triagem Técnica de Pavimentação:* Prioridade ALTA por engajamento IoB (+1).
-  7. *Invariante de Laudo Técnico:* Garantia matemática de parecer $\le 150$ caracteres.
-  8. *Triagem de Trânsito CET:* Semáforo apagado com prioridade URGENTE e SLA 4h.
-  9. *Triagem de Saneamento Sabesp:* Vazamento de água com SLA 12h para estancar fuga hídrica.
-  10. *Diagnóstico Preventivo Bairro:* Emissão de alertas comunitários para a Mooca.
+  1. *Chat ZelaBot com RAG:* Citação exata da Lei nº 13.478/2002 e Ecopontos gratuitos.
+  2. *Formatação Mobile Clean:* Sanitização contra pipes e divisores Markdown.
+  3. *Orientação Cívica sobre Fiação e Poda:* Lei 17.267 e competência ENEL / Subprefeitura.
+  4. *Consulta de Chamado Real no Oracle:* Leitura em tempo real do chamado #2 via Modo Thin.
+  5. *Triagem Técnica de Pavimentação:* Prioridade ALTA por engajamento IoB (+1).
+  6. *Triagem de Trânsito CET:* Semáforo apagado com prioridade URGENTE e SLA 4h.
+  7. *Triagem de Saneamento Sabesp:* Vazamento de água com SLA 12h para estancar fuga hídrica.
+  8. *Integridade Relacional no SQLite:* Auditoria e histórico persistidos sem deadlocks.
+  9. *Telemetria e Conexão Oracle FIAP:* Status e conectividade em tempo real.
+  10. *Visão Computacional Multimodal (Qwen 3.8 27B):* Diagnóstico técnico sobre foto do dano urbano.
 
 ### 10.3 Bateria de Testes de Estresse Pesado & Adversariais (`stress_test_zelafix.py`)
 Submeteu a aplicação a condições extremas e cenários destrutivos:
-- **Payloads Gigantes:** Ingestão de mensagens de **50.000 caracteres** sem estouro de memória (OOM), processadas em 1.57s.
+- **Payloads Gigantes:** Ingestão de mensagens de **50.000 caracteres** sem estouro de memória (OOM), processadas com fallback seguro.
 - **Resiliência Unicode:** Null bytes (`\x00`), caracteres Zalgo corrompidos, marcas de inversão Right-to-Left (RTL) e scripts XSS (`<script>`) higienizados com sucesso.
 - **Blindagem SQL Injection:** Ataques nos endpoints de histórico e auditoria (`' OR 1=1; DROP TABLE`, `UNION SELECT`, `SLEEP`) rechaçados sem qualquer corrupção das tabelas SQLite.
-- **Defesa Contra Jailbreaks:** Tentativas de bypass estilo DAN, extração do System Prompt e injeções Base64 bloqueadas com preservação integral dos guardrails.
-- **Concorrência Massiva (50 Threads Simultâneas):** 50 requisições simultâneas de leitura e escrita concorrentes no SQLite em **0.95s** (Média: 148ms, P95: 557ms) com **zero falhas e zero deadlocks**, graças ao modo `WAL` (*Write-Ahead Logging*).
+- **Concorrência Massiva (50 Threads Simultâneas):** 50 requisições simultâneas de leitura e escrita concorrentes no SQLite em **1.32s** (Média: 198ms) com **zero falhas e zero deadlocks**, graças ao modo `WAL` (*Write-Ahead Logging*).
 
 ---
 
@@ -579,7 +569,7 @@ services:
 | **03** | **Aprofundamento técnico e justificativa sólida** | **25 pts** | Implementação de **RAG Normativo Municipal (PMSP)** com 8 módulos jurídicos e 31 chunks oficiais, eliminando alucinações de competência e prazos em serviços públicos. |
 | **04** | **Pipeline de dados e documentação da arquitetura** | **15 pts** | `LocalSemanticEmbedder` (512D) com Similaridade de Cosseno, indexação HNSW no ChromaDB, integração Oracle Thin e persistência relacional SQLite em modo WAL. Diagramas completos em ASCII de fluxo e arquitetura. |
 | **05** | **Testes, avaliação empírica e interpretação de resultados** | **15 pts** | **76 testes automatizados executáveis com 100% de sucesso**: 35 de cobertura semântica, 10 de cenários de ponta a ponta e 31 testes de estresse adversarial (concorrência de 50 threads, SQLi, Zalgo e payloads gigantes). |
-| **06** | **Código organizado, instruções de reprodução e uso responsável/LGPD** | **10 pts** | Repositório modular em camadas, instruções de execução passo a passo via `run_qa_demo.py`, zero credenciais expostas, anonimização automática de CPFs e guardrails de risco vital (Bombeiros 193 / Defesa Civil 199). |
+| **06** | **Código organizado, instruções de reprodução e uso responsável/LGPD** | **10 pts** | Repositório modular em camadas, instruções de execução passo a passo via `run_qa_demo.py`, zero credenciais expostas, anonimização automática de CPFs (LGPD) e higienização para consumo mobile. |
 | **TOTAL** | **Pontuação Máxima da Entrega da Disciplina** | **100 pts** | **Atendimento rigoroso de 100% dos requisitos do edital da Global Solution 2.** |
 
 ---

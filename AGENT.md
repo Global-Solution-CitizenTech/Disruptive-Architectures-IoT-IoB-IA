@@ -32,8 +32,7 @@ O **ZelaFix AI** é o motor de inteligência artificial generativa multimodal e 
  ┌────────────────────────────────────────────────────────────────────────┐
  │                ⚡ FASTAPI CONTROLLER (ROUTER /AI)                      │
  │  1. Validação de Schema Pydantic (ChatRequest / TriagemRequest)        │
- │  2. Guardrail Determinístico Vital (Fios energizados, 193/199)          │
- │  3. Blindagem Anti-Código e Defesa de Escopo Municipal                │
+ │  2. Proteção LGPD (Anonimização de CPF e dados pessoais)              │
  └───────────────────┬───────────────────────────────┬────────────────────┘
                      │                               │
        (Se menciona chamado #ID)                     ▼
@@ -140,12 +139,10 @@ O ZelaFix AI utiliza o modelo de pesos abertos de última geração **`qwen/qwen
 
 ---
 
-## 🛡️ 6. Guardrails de Segurança Cívica & Higienização
+## 🛡️ 6. Proteção de Dados (LGPD) & Higienização Mobile Clean
 
-1. **Guardrail de Emergência Vital (Risco Letal Imediato):** Detecta menções a fios energizados no chão, postes caídos com faísca ou crateras com risco iminente de morte, instruindo contato imediato com **Corpo de Bombeiros (193)** e **Defesa Civil (199)**.
-2. **Blindagem Anti-Código (Defesa de Escopo):** Bloqueia tentativas de desvio de escopo (como pedidos de scripts Python, código Java ou geração de software), mantendo o foco exclusivo em zeladoria urbana.
-3. **Higienização Mobile Clean:** Elimina markdown denso e tabelas de pipes (`| col |`), formatando listas com marcadores limpos (`•`) para renderização perfeita no app móvel React Native.
-4. **Conformidade LGPD:** Mascara números de CPF, telefones pessoais e e-mails que o munícipe possa digitar no relato antes da persistência no banco.
+1. **Conformidade LGPD:** Mascara automaticamente números de CPF ou documentos pessoais digitados no relato do munícipe antes do envio aos modelos ou persistência no SQLite.
+2. **Higienização Mobile Clean:** Elimina markdown bruto e tabelas de pipes (`| col |`), formatando respostas com marcadores limpos (`•`) para renderização fluida no app React Native.
 
 ---
 

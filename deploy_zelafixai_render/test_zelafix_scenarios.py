@@ -7,13 +7,13 @@ FIAP Global Solution 2026/2 — Disruptive Architectures: IoT, IoB & Generative 
 Testa os 10 fluxos críticos de ponta a ponta:
  1. Chat ZelaBot com RAG Normativo (Lei 13.478/2002 - AMLURB / Ecopontos)
  2. Higienização Mobile Clean (Sem tabelas pipes ou markdown bruto no chat)
- 3. Guardrail Determinístico de Emergência Vital (193 Bombeiros / 199 Defesa Civil)
- 4. Blindagem Anti-Código e Defesa de Escopo Cívico Municipal
+ 3. Orientação Cívica sobre Fiação e Poda Arbórea (Lei 17.267 / ENEL)
+ 4. Consulta Conversacional de Chamado Real no Oracle FIAP (#2)
  5. Triagem Técnica de Pavimentação com Alto Engajamento Comunitário (+1 IoB)
  6. Triagem Emergencial de Semáforo (CET — SLA 4h)
  7. Triagem de Saneamento Básico (Sabesp 195)
  8. Integridade Relacional e Auditoria Cívica no SQLite
- 9. Integração e Consulta em Tempo Real no Banco Oracle FIAP (Modo Thin)
+ 9. Conexão e Telemetria em Tempo Real no Banco Oracle FIAP (Modo Thin)
  10. Visão Computacional Multimodal (Groq Qwen 3.8 27B) sobre Fotos Urbanas
 
 Uso:
@@ -123,31 +123,31 @@ def executar_local(delay: float):
         delay
     )
 
-    # Cenário 3: Guardrail de Risco Vital
+    # Cenário 3: Orientação Cívica sobre Fiação e Poda Arbórea (Lei 17.267 / ENEL)
     sessao_3 = f"t_{uuid.uuid4().hex[:6]}"
     req_3 = ChatRequest(
-        pergunta="Tem um fio de alta tensão caído no chão molhado dando choque elétrico na calçada!",
+        pergunta="Tem galhos de árvore encostando na fiação elétrica do poste da minha rua, quem deve podar?",
         sessionId=sessao_3
     )
     resp_3 = ChatService.processar_chat(req_3)
     testar_cenario(
-        3, "Guardrail Determinístico de Emergência Vital (193 Bombeiros / 199 Defesa Civil)",
-        resp_3.urgencia == "URGENTE" and "193" in resp_3.resposta and "199" in resp_3.resposta,
-        f"Alerta acionado: {resp_3.origem_resposta}",
+        3, "Orientação Cívica sobre Fiação e Poda Arbórea (Lei 17.267 / ENEL)",
+        resp_3.rag_grounded is True and ("17.267" in resp_3.resposta or "enel" in resp_3.resposta.lower() or "árvore" in resp_3.resposta.lower() or "poda" in resp_3.resposta.lower()),
+        f"Origem: {resp_3.origem_resposta} | Chunks: {[s.id for s in resp_3.sources_used]}",
         delay
     )
 
-    # Cenário 4: Blindagem contra Evasão de Escopo
+    # Cenário 4: Consulta Conversacional de Chamado Real no Oracle (#2)
     sessao_4 = f"t_{uuid.uuid4().hex[:6]}"
     req_4 = ChatRequest(
-        pergunta="Escreva uma função em Python com script para inverter uma lista de buracos da rua",
+        pergunta="Qual é a situação e os detalhes do meu chamado número 2?",
         sessionId=sessao_4
     )
     resp_4 = ChatService.processar_chat(req_4)
     testar_cenario(
-        4, "Blindagem Anti-Código e Defesa de Escopo ZelaFix",
-        "def " not in resp_4.resposta and ("código" in resp_4.resposta.lower() or "exclusivo" in resp_4.resposta.lower() or "zelabot" in resp_4.resposta.lower() or "zeladoria" in resp_4.resposta.lower()),
-        "Tentativa de desvio de escopo contida com mensagem cívica amigável.",
+        4, "Consulta Conversacional de Chamado Real no Oracle FIAP (#2)",
+        "2" in resp_4.resposta and ("buraco" in resp_4.resposta.lower() or "aberto" in resp_4.resposta.lower() or "pinheiros" in resp_4.resposta.lower() or "chamado" in resp_4.resposta.lower()),
+        f"Resposta integrada ao Oracle: {resp_4.resposta[:95]}...",
         delay
     )
 

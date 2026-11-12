@@ -16,12 +16,7 @@ from src.services.knowledge_service import KnowledgeService
 from src.services.groq_service import GroqService
 from src.services.chamado_oracle_service import ChamadoOracleService
 from src.repositories.chat_repository import ChatRepository
-from src.utils.guardrails import (
-    detectar_emergencia_vital,
-    detectar_pedido_programacao,
-    sanitizar_resposta_anti_codigo,
-    sanitizar_lgpd
-)
+from src.utils.guardrails import sanitizar_lgpd
 from src.utils.text import normalizar_texto, limpar_texto_mobile
 
 logger = logging.getLogger("ZelaFixAI.ChatService")
@@ -30,39 +25,12 @@ logger = logging.getLogger("ZelaFixAI.ChatService")
 class ChatService:
     """
     Orquestrador conversacional do ZelaBot:
-    1. Verifica Guardrail de Emergência Vital (Bombeiros 193 / Defesa Civil 199).
-    2. Identifica menção a chamados e consulta a base Oracle da FIAP em tempo real.
-    3. Recupera chunks normativos no ChromaDB via Similaridade de Cosseno (512D).
-    4. Monta prompt fundamentado e aciona o Groq Cloud com Qwen 3.8 27B (multimodal).
-    5. Em caso de indisponibilidade externa, aciona o Motor Heurístico Local Resiliente.
-    6. Higieniza a saída para renderização limpa no app React Native e audita no SQLite.
+    1. Identifica menção a chamados e consulta a base Oracle da FIAP em tempo real.
+    2. Recupera chunks normativos no ChromaDB via Similaridade de Cosseno (512D).
+    3. Monta prompt fundamentado e aciona o Groq Cloud com Qwen 3.8 27B (multimodal com visão).
+    4. Em caso de indisponibilidade externa, aciona o Motor Heurístico Local Resiliente.
+    5. Higieniza a saída para renderização limpa no app React Native e audita no SQLite.
     """
-
-    @classmethod
-    def _resposta_guardrail_emergencia(cls) -> ChatResponse:
-        """Gera resposta padronizada para situações de perigo iminente à vida."""
-        texto = (
-            "🚨 ALERTA DE SEGURANÇA E RISCO VITAL ZELAFIX:\n\n"
-            "A situação relatada envolve risco iminente de morte, eletrocussão ou desabamento estrutural.\n\n"
-            "AÇÕES DE EMERGÊNCIA IMEDIATA:\n"
-            "1. Ligue agora para o Corpo de Bombeiros no telefone 193.\n"
-            "2. Para risco de deslizamento, queda de talude ou colapso estrutural, ligue para a Defesa Civil no telefone 199.\n"
-            "3. Mantenha distância de segurança de pelo menos 10 metros da área isolada.\n"
-            "4. Não tente tocar em fios rompidos, galhos caídos ou adentrar vias alagadas."
-        )
-        return ChatResponse(
-            resposta=texto,
-            categoria="seguranca_emergencia",
-            urgencia="URGENTE",
-            acoes_recomendadas=[
-                "Ligar imediatamente para Bombeiros (193) ou Defesa Civil (199)",
-                "Isolar o local e manter distância de segurança",
-                "Avisar pedestres e vizinhos para não se aproximarem"
-            ],
-            origem_resposta="Guardrail de Segurança e Risco Vital ZelaFix",
-            sources_used=[],
-            rag_grounded=False
-        )
 
     @classmethod
     def _finalizar_e_persistir(
@@ -167,12 +135,7 @@ class ChatService:
         try:
             pergunta_norm = normalizar_texto(request.pergunta)
 
-            # 1. Guardrail de Emergência Vital (Risco Iminente de Morte / Eletrocussão)
-            if detectar_emergencia_vital(request.pergunta):
-                resp = cls._resposta_guardrail_emergencia()
-                return cls._finalizar_e_persistir(resp, request, session_id, chamado_id, bairro)
-
-            # 2. Identificação de Intenções e Consulta ao Banco Oracle FIAP
+            # 1. Identificação de Intenções e Consulta ao Banco Oracle FIAP
             id_detectado = ChamadoOracleService.extrair_id_chamado_da_pergunta(request.pergunta)
             target_id = id_detectado or chamado_id
 
@@ -196,7 +159,7 @@ class ChatService:
                 "ajuda com meu bairro", "dicas de zeladoria", "o que voce sabe fazer"
             ])
 
-            # 3. Recuperação de Chunks Normativos via RAG
+            # 2. Recuperação de Chunks Normativos via RAG
             resultado_rag = KnowledgeService.buscar_chunks_rag(request.pergunta, top_k=3)
             chunks_recuperados = resultado_rag["chunks"]
             match_found = resultado_rag["match_found"]
@@ -218,14 +181,14 @@ class ChatService:
                 for chunk in chunks_recuperados
             ]
 
-            # 4. Extração de Foto para Visão Computacional Multimodal (Groq Qwen 3.8 27B)
+            # 3. Extração de Foto para Visão Computacional Multimodal (Groq Qwen 3.8 27B)
             imagem_para_inferencia: Optional[Any] = (
                 request.foto_base64
                 or (c.foto_base64 if c else None)
                 or (dados_oracle.get("foto_bytes") if dados_oracle else None)
             )
 
-            # 5. Montagem do Prompt Fundamentado
+            # 4. Montagem do Prompt Fundamentado
             prompt_fundamentado = formatar_prompt_rag(
                 pergunta=request.pergunta,
                 contexto_chamado_str=contexto_chamado_str,
@@ -235,11 +198,10 @@ class ChatService:
                 is_general_query=is_general_query
             )
 
-            eh_pedido_programacao = detectar_pedido_programacao(request.pergunta)
             origem_ia = ""
             resposta_ia = None
 
-            # 6. Inferência Primária com Groq Cloud (Qwen 3.8 27B Multimodal)
+            # 5. Inferência Primária com Groq Cloud (Qwen 3.8 27B Multimodal)
             try:
                 resposta_ia = GroqService.gerar_resposta(
                     prompt_atual=prompt_fundamentado,
@@ -251,7 +213,7 @@ class ChatService:
             except Exception as e:
                 logger.warning(f"Falha na chamada do Groq ({GROQ_MODEL}): {e}")
 
-            # 7. Motor Heurístico Local Resiliente (Fallback Offline)
+            # 6. Motor Heurístico Local Resiliente (Fallback Offline)
             if not resposta_ia:
                 resposta_ia = cls._gerar_resposta_fallback_local(
                     request.pergunta,
@@ -260,9 +222,8 @@ class ChatService:
                 )
                 origem_ia = "ZelaBot (Motor Heurístico Local Resiliente)"
 
-            # 8. Sanitização de Saída (Anti-Código, LGPD e Mobile Clean)
-            resposta_tratada = sanitizar_resposta_anti_codigo(resposta_ia, eh_pedido_programacao)
-            resposta_tratada = sanitizar_lgpd(resposta_tratada)
+            # 7. Higienização de Saída (LGPD e Mobile Clean)
+            resposta_tratada = sanitizar_lgpd(resposta_ia)
             resposta_limpa = limpar_texto_mobile(resposta_tratada)
 
             # 9. Definição da Categoria e Urgência do Response
