@@ -5,7 +5,6 @@ Global Solution 2 — Disruptive Architectures: IoT, IoB & Generative IA (FIAP 2
 Executa exclusivamente consultas SELECT parametrizadas com limites e timeouts defensivos.
 """
 import os
-import time
 import logging
 from typing import Optional, Dict, Any, List, Tuple
 from src.core.config import ORACLE_USER, ORACLE_PASSWORD, ORACLE_URL, ORACLE_DSN
@@ -29,8 +28,6 @@ class OracleClient:
     Todas as operações utilizam exclusivamente SELECT com bind variables e timeouts.
     """
 
-    _bairros_cache: List[str] = []
-    _bairros_cache_exp: float = 0.0
     _SQL_BAIRRO_NORM = (
         "TRANSLATE(LOWER(b.nm_bairro), "
         "'áàâãäéèêëíìîïóòôõöúùûüç', "
@@ -217,40 +214,6 @@ class OracleClient:
         """Retorna os dados do chamado no Oracle ou None se indisponível/inexistente."""
         dados, _ = cls.consultar_chamado_com_status(id_chamado, incluir_foto=incluir_foto)
         return dados
-
-    @classmethod
-    def listar_bairros_cadastrados(cls, ttl_seconds: int = 300) -> List[str]:
-        """
-        Lista bairros reais cadastrados na tabela BAIRRO do Oracle (somente SELECT),
-        com cache em memória para evitar consultas repetidas e listas fixas no código.
-        """
-        agora = time.monotonic()
-        if cls._bairros_cache and agora < cls._bairros_cache_exp:
-            return list(cls._bairros_cache)
-
-        conn = cls._conectar()
-        if not conn:
-            return list(cls._bairros_cache)
-
-        bairros: List[str] = []
-        try:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    "SELECT DISTINCT nm_bairro FROM bairro WHERE nm_bairro IS NOT NULL ORDER BY nm_bairro"
-                )
-                bairros = [str(row[0]).strip() for row in cursor.fetchall() if row[0] and str(row[0]).strip()]
-            if bairros:
-                cls._bairros_cache = bairros
-                cls._bairros_cache_exp = agora + ttl_seconds
-        except Exception as e:
-            logger.warning(f"Erro ao listar bairros cadastrados no Oracle: {e}")
-        finally:
-            try:
-                conn.close()
-            except Exception:
-                pass
-
-        return list(bairros or cls._bairros_cache)
 
     @classmethod
     def listar_chamados_recentes(cls, limit: int = 10, bairro: Optional[str] = None) -> List[Dict[str, Any]]:

@@ -10,7 +10,6 @@ from src.core.prompts import formatar_prompt_triagem
 from src.schemas.insights import TriagemRequest, TriagemResponse
 from src.services.knowledge_service import KnowledgeService
 from src.services.groq_service import GroqService
-from src.services.viacep_client import ViaCepClient
 from src.database.oracle_client import OracleClient
 from src.repositories.chat_repository import ChatRepository
 from src.utils.guardrails import sanitizar_lgpd
@@ -274,13 +273,6 @@ class TriagemService:
                     bairro_raw = dados_oracle["bairro"]
                 if apoios == 0 and dados_oracle.get("apoios_comunitarios"):
                     apoios = dados_oracle["apoios_comunitarios"]
-
-            # Enriquecimento por ViaCEP quando CEP vier preenchido sem bairro real (padrão Java)
-            cep_resolvido = chamado.cep or (dados_oracle.get("cep") if dados_oracle else None)
-            if (bairro_raw == "São Paulo - SP" or not bairro_raw) and cep_resolvido:
-                dados_cep = ViaCepClient.consultar_cep(cep_resolvido)
-                if dados_cep and dados_cep.get("bairro"):
-                    bairro_raw = sanitizar_lgpd(dados_cep["bairro"])
 
             # Telemetria IoT real (quando presente)
             telemetria = chamado.telemetria_iot

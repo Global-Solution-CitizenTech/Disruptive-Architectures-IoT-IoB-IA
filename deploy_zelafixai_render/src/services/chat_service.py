@@ -14,7 +14,7 @@ from src.core.prompts import formatar_prompt_rag
 from src.schemas.chat import ChatRequest, ChatResponse, RetrievedSource, MensagemHistorico
 from src.services.knowledge_service import KnowledgeService
 from src.services.groq_service import GroqService
-from src.services.chamado_oracle_service import ChamadoOracleService
+from src.services.chamado_oracle_service import ChamadoOracleService, TOOLS_ORACLE
 from src.repositories.chat_repository import ChatRepository
 from src.utils.guardrails import sanitizar_lgpd
 from src.utils.text import normalizar_texto, limpar_texto_mobile
@@ -207,7 +207,6 @@ class ChatService:
                 id_chamado=target_id,
                 contexto_dto=c,
                 incluir_foto=precisa_foto_oracle,
-                pergunta=pergunta_segura
             )
             if contexto_chamado_str:
                 contexto_chamado_str = sanitizar_lgpd(contexto_chamado_str)
@@ -269,10 +268,13 @@ class ChatService:
             resposta_ia = None
 
             try:
+                habilitar_tool_oracle = (target_id is None) and (c is None) and (not imagem_para_inferencia)
                 resposta_ia = GroqService.gerar_resposta(
                     prompt_atual=prompt_fundamentado,
                     historico=historico_para_llm,
-                    imagem_base64=imagem_para_inferencia
+                    imagem_base64=imagem_para_inferencia,
+                    tools=TOOLS_ORACLE if habilitar_tool_oracle else None,
+                    tool_executor=ChamadoOracleService.executar_tool_oracle if habilitar_tool_oracle else None,
                 )
                 if resposta_ia:
                     origem_ia = f"ZelaBot (Groq {GROQ_MODEL})"

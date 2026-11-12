@@ -10,7 +10,7 @@ import re
 import json
 import base64
 import logging
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, Callable
 from groq import Groq
 import src.core.config as cfg_module
 from src.core.prompts import SYSTEM_INSTRUCTION
@@ -150,10 +150,12 @@ class GroqService:
         cls,
         prompt_atual: str,
         historico: Optional[List[MensagemHistorico]] = None,
-        imagem_base64: Optional[Union[str, bytes]] = None
+        imagem_base64: Optional[Union[str, bytes]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        tool_executor: Optional[Callable[[str, Dict[str, Any]], str]] = None,
     ) -> Optional[str]:
         """
-        Executa inferência com Qwen 3.8 27B via Groq Cloud.
+        Executa inferência com Qwen 3.8 27B via Groq Cloud (com suporte opcional a Tool Calling).
         Retorna o texto limpo gerado ou None se a chamada falhar (acionando fallback local).
         """
         client = cls._obter_cliente()
@@ -162,14 +164,63 @@ class GroqService:
 
         try:
             messages = cls.formatar_mensagens(prompt_atual, historico, imagem_base64)
-            completion = client.chat.completions.create(
-                model=cfg_module.GROQ_MODEL,
-                messages=messages,
-                temperature=0.5,
-                max_tokens=800
-            )
-            if completion.choices and completion.choices[0].message.content:
-                limpo = cls._limpar_raciocinio(completion.choices[0].message.content)
+            kwargs: Dict[str, Any] = {
+                "model": cfg_module.GROQ_MODEL,
+                "messages": messages,
+                "temperature": 0.5,
+                "max_tokens": 800,
+            }
+            usar_tools = bool(tools and tool_executor and not imagem_base64)
+            if usar_tools:
+                kwargs["tools"] = tools
+                kwargs["tool_choice"] = "auto"
+
+            completion = client.chat.completions.create(**kwargs)
+            if not completion.choices:
+                return None
+
+            msg = completion.choices[0].message
+            tool_calls = getattr(msg, "tool_calls", None)
+            if usar_tools and tool_calls:
+                messages.append({
+                    "role": "assistant",
+                    "content": msg.content or "",
+                    "tool_calls": [
+                        {
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments or "{}",
+                            },
+                        }
+                        for tc in tool_calls[:2]
+                    ],
+                })
+                for tc in tool_calls[:2]:
+                    try:
+                        args = json.loads(tc.function.arguments or "{}")
+                        if not isinstance(args, dict):
+                            args = {}
+                    except json.JSONDecodeError:
+                        args = {}
+                    resultado_tool = tool_executor(tc.function.name, args)
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": resultado_tool,
+                    })
+
+                completion = client.chat.completions.create(
+                    model=cfg_module.GROQ_MODEL,
+                    messages=messages,
+                    temperature=0.5,
+                    max_tokens=800,
+                )
+                msg = completion.choices[0].message if completion.choices else None
+
+            if msg and msg.content:
+                limpo = cls._limpar_raciocinio(msg.content)
                 return limpo or None
             return None
         except Exception as e:
