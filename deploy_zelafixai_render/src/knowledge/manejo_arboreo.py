@@ -1,10 +1,11 @@
 """
-Base de Conhecimento RAG: Manejo Arbóreo, Poda, Remoção de Árvores e Defesa Civil — PMSP
+Base de Conhecimento RAG: Manejo Arbóreo, Poda, Queda e Remoção de Árvores — PMSP
 Fundamentação Legal: Lei Municipal nº 17.267/2020 e Portaria SVMA nº 28/2020
+Órgãos Competentes: Subprefeituras Regionais (SVMA), ENEL Distribuição SP e Defesa Civil (199)
 """
 from typing import Dict, Any, List
 
-_SOURCE = "Lei Municipal nº 17.267/2020 e Manual de Arborização Urbana SVMA/PMSP"
+_SOURCE = "Lei Municipal nº 17.267/2020 (Manejo Arbóreo PMSP) e SVMA"
 
 CHUNKS_MANEJO_ARBOREO: List[Dict[str, Any]] = [
     {
@@ -12,54 +13,54 @@ CHUNKS_MANEJO_ARBOREO: List[Dict[str, Any]] = [
         "source": _SOURCE,
         "urgency": "media",
         "category": "manejo_arboreo",
-        "title": "Procedimento para Poda Preventiva de Árvores em Logradouros Públicos",
+        "title": "Solicitação de Poda Preventiva e Equilíbrio de Copa em Logradouros Públicos",
         "content": (
-            "A poda de galhos de árvores localizadas em calçadas, canteiros centrais e praças municipais é de competência exclusiva da Prefeitura de São Paulo "
-            "(Subprefeituras), sendo terminantemente proibida a poda drástica ou corte por munícipes sem autorização sob pena de crime ambiental (Lei nº 9.605/1998). "
-            "A solicitação via ZelaFix gera vistoria por Engenheiro Agrônomo ou Biólogo municipal, que emite laudo técnico fitossanitário no prazo de até 15 dias "
-            "úteis, avaliando necessidade de levantamento de copa, desobstrução de luminárias ou remoção de galhos secos."
+            "Conforme a Lei Municipal nº 17.267/2020, o manejo e a poda de árvores situadas em passeios públicos, calçadas, praças e canteiros "
+            "centrais competem exclusivamente à Subprefeitura Regional, mediante vistoria agronômica e emissão de laudo técnico fitossanitário. "
+            "É expressamente proibido ao munícipe realizar a poda por conta própria, sob pena de autuação por crime ambiental. O serviço contempla "
+            "poda de desobstrução de luminárias, limpeza de galhos secos e equilíbrio de copa, com prazo de atendimento de até 72 horas após a vistoria."
         ),
-        "keywords": ["poda de arvore", "podar galho", "arvore na calcada", "subprefeitura poda", "laudo agronomo", "poda preventiva", "galho tapando luz"]
+        "keywords": ["poda de arvore", "podar arvore", "galhos altos", "cortar galho", "arvore na calcada", "limpeza de copa", "arvore grande na rua"]
     },
     {
         "id": "arb_02",
         "source": _SOURCE,
         "urgency": "URGENTE",
         "category": "manejo_arboreo",
-        "title": "Galhos em Conflito com a Rede Elétrica Primária (Competência Exclusiva ENEL)",
+        "title": "Galhos em Contato com Fiação da Rede Elétrica Primária (Competência ENEL)",
         "content": (
-            "Quando galhos de árvores estão tocando ou próximos à fiação elétrica de média e alta tensão (cabos primários de 13,8 kV) emitindo faíscas, "
-            "curto-circuitos ou estalos, o serviço de poda é de competência EXCLUSIVA da distribuidora de energia ENEL Distribuição São Paulo. Equipes da Prefeitura "
-            "não podem intervir sem o desligamento técnico programado da rede elétrica devido ao perigo letal de arco voltaico e eletrocussão. "
-            "O chamado é direcionado para a central prioritária da concessionária de energia em regime de urgência."
+            "Quando os galhos ou a copa da árvore estão em contato direto com a rede elétrica aérea de média ou alta tensão, provocando faíscas, "
+            "curto-circuito, oscilação de energia ou rompimento de cabos condutores, a competência é EXCLUSIVA da concessionária ENEL Distribuição São Paulo. "
+            "Equipes da Subprefeitura não podem podar árvores energizadas por risco fatal de eletrocussão. A ENEL tem prazo regulamentar emergencial "
+            "de até 12 horas para desligamento da rede no circuito e execução do corte dos galhos em conflito com a fiação."
         ),
-        "keywords": ["arvore na fiacao", "galho no fio eletrico", "galhos nos fios", "fios eletricos", "faisca no poste", "curto circuito arvore", "enel", "alta tensao arvore", "perigo choque arvore", "faisca"]
+        "keywords": ["arvore na fiacao", "galho no fio", "arvore encostando no fio eletrico", "fios com faisca", "galho dando curto", "enel poda", "fio eletrico arvore"]
     },
     {
         "id": "arb_03",
         "source": _SOURCE,
         "urgency": "URGENTE",
         "category": "manejo_arboreo",
-        "title": "Árvore com Risco Iminente de Queda ou Tombamento Sobre Vias e Residências",
+        "title": "Árvore com Risco Iminente de Tombamento, Tronco Oco ou Raízes Expostas",
         "content": (
-            "Árvores de grande porte apresentando inclinação abrupta do tronco, levantamento visível do torrão de raízes, tronco oco com infestação severa "
-            "de cupins, rachaduras longitudinais ou podridão fúngica na base configuram RISCO IMINENTE DE TOMBAMENTO. O chamado recebe prioridade URGENTE e "
-            "mobiliza vistoria imediata da Coordenadoria Municipal de Defesa Civil (COMPDEC - Telefone 199) e Corpo de Bombeiros (193). As equipes efetuam o isolamento "
-            "do perímetro e a remoção preventiva do exemplar arbóreo para proteger a vida dos cidadãos."
+            "Árvores de grande porte com inclinação acentuada do fuste superior a 15 graus, raízes arrancadas pelo vento, tronco oco com infestação severa "
+            "por cupins/fungos ou rachaduras estruturais na base configuram situação de emergência pública por perigo iminente de queda sobre veículos ou imóveis. "
+            "A Defesa Civil Municipal (Central 199) e os engenheiros agrônomos da Subprefeitura realizam vistoria imediata, isolamento do perímetro e autorização "
+            "expressa para supressão (remoção total) preventiva do espécime vegetal."
         ),
-        "keywords": ["arvore caindo", "risco de queda arvore", "tronco oco", "arvore inclinada", "raiz levantada", "defesa civil", "bombeiros 193", "arvore perigosa"]
+        "keywords": ["arvore inclinada", "arvore caindo", "tronco oco", "raiz arrancada", "arvore podre", "risco de queda arvore", "defesa civil arvore"]
     },
     {
         "id": "arb_04",
         "source": _SOURCE,
         "urgency": "URGENTE",
         "category": "manejo_arboreo",
-        "title": "Remoção Emergencial de Árvore Caída em Logradouro Público Após Temporal",
+        "title": "Remoção Emergencial de Árvore Tombada com Bloqueio de Via Pública",
         "content": (
-            "Após eventos climáticos severos e vendavais, árvores ou galhos de grande porte caídos bloqueando total ou parcialmente o tráfego viário, "
-            "atingindo fiação ou obstruindo garagens e residências recebem despacho em comboio de emergência: Corpo de Bombeiros para desencarceramento e corte com motosserra, "
-            "CET para desvio de trânsito, ENEL para restabelecimento elétrico e Subprefeitura para trituração e recolhimento dos troncos no menor tempo possível."
+            "Após temporais e vendavais, a ocorrência de árvore tombada bloqueando totalmente a pista de rolamento ou atingindo veículos/redes exige "
+            "operação conjunta imediata do Corpo de Bombeiros (193), CET para desvio do tráfego e equipe de poda da Subprefeitura para seccionamento com motosserra, "
+            "desobstrução da via em até 4 a 12 horas e recolhimento dos resíduos lenhosos triturados para compostagem."
         ),
-        "keywords": ["arvore caiu", "arvore bloqueando rua", "arvore na pista", "temporal arvore", "desobstrucao de via", "motosserra bombeiros"]
+        "keywords": ["arvore caiu na rua", "arvore tombada", "arvore bloqueando a rua", "arvore caiu no carro", "arvore cada na tempestade", "desobstruir rua arvore"]
     }
 ]

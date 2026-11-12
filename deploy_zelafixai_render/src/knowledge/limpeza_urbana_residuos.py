@@ -1,6 +1,7 @@
 """
-Base de Conhecimento RAG: Limpeza Urbana, Resíduos Sólidos, Ecopontos e Cata-Bagulho — PMSP
+Base de Conhecimento RAG: Limpeza Urbana, Ecopontos e Gestão de Resíduos Sólidos — PMSP
 Fundamentação Legal: Lei Municipal nº 13.478/2002 (Código de Limpeza Urbana de São Paulo)
+Órgão Competente: Autoridade Municipal de Limpeza Urbana (AMLURB) e Subprefeituras Regionais
 """
 from typing import Dict, Any, List
 
@@ -14,53 +15,55 @@ CHUNKS_LIMPEZA: List[Dict[str, Any]] = [
         "category": "limpeza_urbana",
         "title": "Regras de Descarte Gratuito em Ecopontos Municipais",
         "content": (
-            "A Cidade de São Paulo disponibiliza mais de 120 Ecopontos operados pela Prefeitura de São Paulo onde qualquer munícipe pode entregar "
-            "gratuitamente até 1 m³ (um metro cúbico) de resíduos por dia, o que equivale a aproximadamente uma caixa d'água de 1.000 litros ou cerca "
-            "de 20 sacos de entulho de reforma residencial. São aceitos: sobras de construção civil (tijolos, concreto, argamassa), móveis velhos, "
-            "madeiras, colchões, eletrodomésticos desmontados e sobras de podas de jardim. NÃO são aceitos lixo orgânico doméstico, resíduos industriais, "
-            "pneus ou lixo hospitalar/químico. O serviço é 100% gratuito de segunda a sábado das 06h às 22h e domingos e feriados das 06h às 18h."
+            "Conforme a Lei Municipal nº 13.478/2002 e as diretrizes da AMLURB, a Cidade de São Paulo disponibiliza mais de 120 unidades de Ecopontos "
+            "abertas de segunda a sábado das 6h às 22h e domingos/feriados das 6h às 18h. Todo munícipe tem o direito de entregar GRATUITAMENTE até "
+            "1 m³ (um metro cúbico — equivalente a cerca de 20 sacos de 50 litros ou 1 caçamba de caminhonete pequena) de resíduos por dia. "
+            "São aceitos: entulho de pequenas reformas da construção civil, sobras de azulejo, cimento e tijolo, restos de poda de jardim, móveis velhos, "
+            "madeiras, colchões e materiais recicláveis secos (papel, plástico, vidro, metal). Não são aceitos: lixo orgânico domiciliar, resíduos industriais, "
+            "lixo hospitalar ou grandes volumes acima de 1 m³ (que exigem contratação de caçamba cadastrada)."
         ),
-        "keywords": ["ecoponto", "jogar entulho", "onde jogar entulho", "descarte gratuito", "sobra de obra", "metro cubico", "moveis velhos", "1 metro cubico gratis"]
+        "keywords": ["ecoponto", "jogar entulho", "descarte gratuito", "onde levar entulho", "onde descartar movel velho", "quanto custa ecoponto", "descarte de reforma", "resto de obra"]
     },
     {
         "id": "limp_02",
         "source": _SOURCE,
         "urgency": "alta",
         "category": "limpeza_urbana",
-        "title": "Descarte Clandestino de Entulho em Vias Públicas e Multas Previstas",
+        "title": "Descarte Clandestino de Entulho em Vias Públicas e Penalidades Legais",
         "content": (
-            "O descarte irregular de entulho, lixo ou terra em calçadas, canteiros centrais e praças públicas é infração gravíssima com base no artigo 161 "
-            "da Lei Municipal nº 13.478/2002. A multa atualizada supera o valor de R$ 25.000,00, além da apreensão do veículo ou caçamba transportadora. "
-            "Ao registrar denúncia no ZelaFix, a equipe de fiscalização de posturas da Subprefeitura é enviada ao local para autuação, e o consórcio de "
-            "limpeza urbana (EcoUrbis ou Loga) realiza a remoção mecânica dos resíduos no prazo de 24 a 48 horas úteis."
+            "O descarte irregular de resíduos da construção civil, móveis, terra ou lixo em calçadas, sarjetas, praças e canteiros públicos é crime "
+            "ambiental sujeito a apreensão do veículo transportador e aplicação de multa pesada superior a R$ 25.000,00 (vinte e cinco mil reais), "
+            "conforme o artigo 161 da Lei nº 13.478/2002. A denúncia realizada no ZelaFix é encaminhada à fiscalização de posturas da Subprefeitura "
+            "e à Guarda Civil Metropolitana (GCM) com prazo padrão para recolhimento e higienização mecânica em até 48 horas úteis."
         ),
-        "keywords": ["entulho na calcada", "lixo jogado na rua", "descarte clandestino", "multa de entulho", "lei 13478", "fiscalizacao subprefeitura", "ecourbis", "loga"]
+        "keywords": ["entulho na calcada", "lixo jogado na rua", "descarte irregular", "entulho clandestino", "multa de lixo", "jogaram lixo na esquina", "sobra de obra na rua"]
     },
     {
         "id": "limp_03",
         "source": _SOURCE,
         "urgency": "baixa",
         "category": "limpeza_urbana",
-        "title": "Operação Cata-Bagulho e Coleta Agendada de Inservíveis",
+        "title": "Operação Cata-Bagulho e Coleta Programada de Grandes Objetos",
         "content": (
-            "A Operação Cata-Bagulho é realizada gratuitamente pelas Subprefeituras aos finais de semana, percorrendo roteiros pré-definidos de vias para "
-            "recolher materiais inservíveis (sofás, armários, mesas, eletrodomésticos quebrados e madeiras). O morador deve colocar os itens na calçada até "
-            "as 07h do dia divulgado no calendário municipal do portal da Prefeitura. O Cata-Bagulho não recolhe entulho de construção civil e lixo orgânico domiciliar."
+            "A Operação Cata-Bagulho é um serviço gratuito municipal realizado periodicamente aos finais de semana pelas Subprefeituras para recolher "
+            "móveis velhos, colchões, eletrodomésticos quebrados, madeiras e sobras de metal que não cabem na coleta domiciliar comum. "
+            "Os munícipes devem colocar os materiais na calçada em frente às suas casas até as 7h da manhã do dia programado. O calendário por rua "
+            "pode ser consultado no portal da Subprefeitura ou no ZelaFix. O Cata-Bagulho NÃO recolhe entulho de obra, terra ou lixo orgânico."
         ),
-        "keywords": ["cata-bagulho", "recolher sofa", "moveis velhos", "calendario cata-bagulho", "subprefeitura recolhe armario", "inserviveis"]
+        "keywords": ["cata-bagulho", "caminhao cata bagulho", "recolher sofa velho", "pegar geladeira velha", "coleta de movel", "horario cata bagulho"]
     },
     {
         "id": "limp_04",
         "source": _SOURCE,
-        "urgency": "alta",
+        "urgency": "media",
         "category": "limpeza_urbana",
-        "title": "Terrenos Baldios com Acúmulo de Lixo e Foco de Dengue",
+        "title": "Limpeza, Capinação e Notificação de Terrenos Baldios Particulares",
         "content": (
-            "O acúmulo de lixo, entulho, pneus e garrafas com água parada em terrenos baldios particulares representa grave ameaça à saúde pública "
-            "como criadouro do mosquito Aedes aegypti (transmissor de Dengue, Zika e Chikungunya). A Subprefeitura e a Vigilância Sanitária Municipal (COVAS) "
-            "emitem intimação com prazo de 30 dias para que o proprietário efetue a limpeza completa, desratização e muramento do lote, sob aplicação de "
-            "pesadas multas sucessivas previstas no Código de Posturas Urbanas."
+            "Proprietários de imóveis não edificados (terrenos baldios) na Cidade de São Paulo são obrigados por lei a mantê-los limpos, capinados, "
+            "drenados, fechados com muro de alvenaria e com calçada pavimentada. O acúmulo de mato alto e lixo clandestino gera proliferação de escorpiões, "
+            "ratos e mosquitos da dengue (Aedes aegypti). Ao receber o relato, a Subprefeitura vistoria o local em até 5 dias úteis, notifica o proprietário "
+            "com prazo de 60 dias para regularização e, em caso de descumprimento, aplica multa e executa limpeza compulsória com cobrança no IPTU."
         ),
-        "keywords": ["terreno baldio", "foco de dengue", "lixo no terreno", "mato alto", "aedes aegypti", "vigilancia sanitaria", "intimacao proprietario"]
+        "keywords": ["terreno baldio", "mato alto", "terreno abandonado", "lixo no terreno", "foco de dengue terreno", "dono do terreno", "limpar terreno"]
     }
 ]

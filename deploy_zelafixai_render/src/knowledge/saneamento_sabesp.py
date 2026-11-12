@@ -1,10 +1,11 @@
 """
-Base de Conhecimento RAG: Saneamento Básico, Vazamento de Água e Esgoto — Sabesp / ARSESP
-Fundamentação Legal: Regulamento Geral da ARSESP e Contrato de Programa Sabesp
+Base de Conhecimento RAG: Saneamento Básico, Vazamentos e Redes de Distribuição — Sabesp
+Fundamentação Legal: Regulamento Geral da ARSESP e Contrato de Concessão de Serviços Sabesp
+Órgão Competente: Companhia de Saneamento Básico do Estado de São Paulo (Central 195)
 """
 from typing import Dict, Any, List
 
-_SOURCE = "Regulamento Geral ARSESP e Central de Operações Sabesp (195)"
+_SOURCE = "Regulamento Geral ARSESP e Contrato de Programa Sabesp (Central 195)"
 
 CHUNKS_SANEAMENTO: List[Dict[str, Any]] = [
     {
@@ -12,39 +13,39 @@ CHUNKS_SANEAMENTO: List[Dict[str, Any]] = [
         "source": _SOURCE,
         "urgency": "URGENTE",
         "category": "saneamento",
-        "title": "Rompimento de Adutora e Vazamento de Água Potável Limpa na Via Pública",
+        "title": "Vazamento de Água Potável na Rua com Risco de Solapamento do Subleito",
         "content": (
-            "Vazamentos de água potável no leito carroçável ou passeio público causados por rompimento de adutoras, tubulações mestras ou ramais prediais "
-            "provocam perda inaceitável de recurso hídrico tratado e causam o solapamento invisível do subleito asfáltico, gerando risco iminente de abertura "
-            "de crateras súbitas que tragam veículos. O chamado é classificado com severidade URGENTE e aciona a Central de Emergências da Companhia de "
-            "Saneamento Básico do Estado de São Paulo (Sabesp - Telefone 195) com prazo regulatório para contenção de vazamento entre 4 a 12 horas."
+            "Vazamentos em redes distribuidoras e adutoras de água tratada no leito viário ou passeio público são de competência exclusiva da Sabesp. "
+            "A fuga contínua de água sob alta pressão carrega o solo fino da base viária (efeito 'piping'), provocando solapamento oculto do asfalto "
+            "e abertura súbita de grandes crateras. Conforme norma da ARSESP, vazamentos visíveis na via pública devem ser contidos em até 12 horas corridas "
+            "após a notificação pelo canal Sabesp 195 ou encaminhamento direto via ZelaFix."
         ),
-        "keywords": ["vazamento de agua", "cano quebrado", "agua jorrando na rua", "adutora rompida", "sabesp 195", "vazamento de agua limpa", "agua potavel rua"]
+        "keywords": ["cano estourado", "cano quebrado", "vazamento de agua", "adutora rompida", "agua jorrando", "agua limpa na rua", "sabesp vazamento", "cano furado"]
     },
     {
         "id": "sab_02",
         "source": _SOURCE,
-        "urgency": "alta",
+        "urgency": "URGENTE",
         "category": "saneamento",
-        "title": "Extravasamento de Esgoto Sanitário a Céu Aberto e Risco Biológico",
+        "title": "Vazamento de Esgoto Sanitário a Céu Aberto e Risco à Saúde Pública",
         "content": (
-            "O retorno ou extravasamento de efluentes de esgoto cloacal em vias públicas, galerias ou caixas de inspeção exala odores fétidos intensos e "
-            "representa grave risco biológico de transmissão de patógenos (leptospirose, hepatite, cólera e gastroenterites). A concessionária Sabesp "
-            "mobiliza caminhão de desobstrução e sucção a vácuo para desentupir a rede coletora no prazo máximo regulamentar de até 24 horas úteis."
+            "O vazamento, extravasamento ou refluxo de esgoto sanitário bruto em via pública, sarjeta ou calçada configura grave risco à saúde pública "
+            "e contaminação biológica por vetores (leptospirose, cólera, hepatite e coliformes fecais). A Sabesp tem a obrigação regulamentar de enviar "
+            "equipe técnica de desobstrução e saneamento em até 24 horas para reparo da rede coletora e aplicação de cal/desinfetante clorado no leito contaminado."
         ),
-        "keywords": ["esgoto a ceu aberto", "vazamento de esgoto", "mau cheiro na rua", "poco de visita esgoto", "sabesp esgoto", "risco biologico esgoto"]
+        "keywords": ["esgoto vazando", "esgoto a ceu aberto", "cheiro de esgoto", "cano de esgoto", "poco de esgoto transbordando", "fezes na rua", "mau cheiro na rua"]
     },
     {
         "id": "sab_03",
         "source": _SOURCE,
-        "urgency": "media",
+        "urgency": "alta",
         "category": "saneamento",
-        "title": "Cavalete do Hidrômetro com Vazamento ou Danificado",
+        "title": "Vazamento no Cavalete e Ramal Predial de Ligação de Água",
         "content": (
-            "Danos estruturais, fissuras ou vazamentos no cavalete de ligação de água situado no alinhamento predial do imóvel exigem intervenção técnica "
-            "da Sabesp. Se o vazamento estiver localizado antes do medidor (hidrômetro), a responsabilidade da manutenção e conserto é integral e gratuita da "
-            "concessionária. O prazo padrão para agendamento de vistoria e substituição do conjunto de conexão é de 24 a 48 horas úteis."
+            "A responsabilidade da Sabesp estende-se desde a tubulação distribuidora central da rua até a saída do hidrômetro localizado no cavalete "
+            "predial do imóvel. Vazamentos identificados no cavalete, no registro de entrada ou na calçada antes do hidrômetro geram desperdício de recurso "
+            "hídrico sem faturamento para o munícipe. O atendimento para substituição do hidrômetro ou estancamento do ramal tem SLA padrão de 24 horas úteis."
         ),
-        "keywords": ["vazamento no hidrometro", "cavalete quebrado", "relogio de agua vazando", "vazamento no cavalete", "sabesp hidrometro"]
+        "keywords": ["cavalete vazando", "hidrometro quebrado", "relogio de agua", "ramal de agua", "vazamento no hidrometro", "registro de agua da rua"]
     }
 ]

@@ -78,7 +78,11 @@ MAPA_EXPANSAO_SEMANTICA: Dict[str, List[str]] = {
     "farol": ["semaforo", "sinal", "transito", "cet", "cruzamento", "amarelo"],
     "sinal": ["semaforo", "farol", "transito", "cet", "placa", "faixa"],
     "placa": ["sinalizacao", "transito", "cet", "pare", "sentido", "vandalizada", "derrubada"],
-    "faixa": ["pedestres", "pintura", "cet", "escola", "hospital", "atropelamento", "sinalizacao"],
+    "zebrada": ["faixa de pedestres", "pintura", "cet", "travessia", "sinalizacao"],
+    "pedestre": ["faixa de pedestres", "travessia", "cet", "calcada", "sinalizacao"],
+    "pedestres": ["faixa de pedestres", "travessia", "cet", "calcada", "sinalizacao"],
+    "faixa": ["pedestres", "faixa de pedestres", "zebrada", "pintura", "cet", "sinalizacao"],
+    "faixa de pedestres": ["zebrada", "pintura", "cet", "escola", "hospital", "atropelamento", "sinalizacao"],
 
     # Saneamento e Abastecimento (Sabesp)
     "vazamento": ["agua", "esgoto", "sabesp", "adutora", "cano", "infiltracao", "hidrometro", "195"],

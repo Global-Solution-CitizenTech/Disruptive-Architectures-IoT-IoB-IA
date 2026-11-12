@@ -1,10 +1,11 @@
 """
-Base de Conhecimento RAG: Iluminação Pública, Postes e Rede Noturna — PMSP
-Fundamentação Legal: PPP Ilumina SP, Portaria SGM/SES nº 03/2021 e Resolução Normativa ANEEL
+Base de Conhecimento RAG: Iluminação Pública, Telegestão LED e Pontos Escuros — PMSP
+Fundamentação Legal: Portaria SGM/SES nº 03/2021 e Contrato de Concessão PPP Ilumina SP
+Órgão Competente: Departamento de Iluminação Pública (Ilumina SP) e Concessionária Ilumina SP
 """
 from typing import Dict, Any, List
 
-_SOURCE = "Contrato PPP Ilumina SP e Portaria SGM/SES nº 03/2021"
+_SOURCE = "Portaria SGM/SES nº 03/2021 e Contrato de Concessão PPP Ilumina SP"
 
 CHUNKS_ILUMINACAO: List[Dict[str, Any]] = [
     {
@@ -12,55 +13,52 @@ CHUNKS_ILUMINACAO: List[Dict[str, Any]] = [
         "source": _SOURCE,
         "urgency": "alta",
         "category": "iluminacao",
-        "title": "Substituição de Lâmpadas Apagadas e Modernização para LED (Ilumina SP)",
+        "title": "Substituição de Lâmpadas Queimadas e Reparo de Pontos Escuros em Vias Públicas",
         "content": (
-            "A manutenção do parque de iluminação pública da Cidade de São Paulo é operada pelo consórcio Ilumina SP através de Parceria Público-Privada (PPP). "
-            "Chamados informando lâmpadas queimadas, luminárias apagadas ou oscilando (piscando) devem ser atendidos no prazo de 24 a 48 horas úteis. "
-            "A substituição utiliza exclusivamente luminárias de tecnologia LED de alta eficiência energética, que oferecem maior fluxo luminoso, "
-            "índice de reprodução de cor superior e durabilidade de até 50.000 horas, contribuindo para a sustentabilidade da cidade (ODS 11)."
+            "A manutenção do parque de iluminação pública da capital paulista é operada pela concessionária Ilumina SP sob regulação do Departamento "
+            "de Iluminação Pública (DIP/SGM). Chamados referentes a postes com lâmpadas apagadas à noite, luminárias piscando ou trechos de vias com "
+            "iluminação intermitente possuem prazo contratual máximo de atendimento de até 48 horas úteis após a notificação formal no sistema. "
+            "A equipe realiza a troca da lâmpada de vapor de sódio remanescente por luminária LED de alta eficiência com telegestão."
         ),
-        "keywords": ["poste apagado", "lampada queimada", "luz da rua apagada", "ilumina sp", "luminaria led", "escuridao na rua", "trocar lampada do poste"]
+        "keywords": ["lampada queimada", "poste apagado", "ponto escuro", "luz da rua apagada", "luminaria led apagada", "trocar lampada do poste", "escuridao na rua"]
     },
     {
         "id": "ilum_02",
         "source": _SOURCE,
         "urgency": "URGENTE",
         "category": "iluminacao",
-        "title": "Apagão em Vias Escolares, Pontos de Ônibus e Locais de Vulnerabilidade",
+        "title": "Apagões Noturnos em Paradas de Ônibus, Escolas e Áreas de Tráfego Vulnerável",
         "content": (
-            "Quando a falta de iluminação atinge múltiplos postes consecutivos (circuito em blackout) ou ocorre em frente a escolas, creches, "
-            "hospitais, unidades básicas de saúde ou pontos de ônibus com grande circulação de passageiros, a ocorrência recebe prioridade URGENTE "
-            "devido ao elevado risco à segurança pessoal e vulnerabilidade contra assaltos e assédios no período noturno. O prazo normativo para "
-            "restabelecimento do circuito de iluminação é de 12 a 24 horas."
+            "Quando a falta de iluminação atinge locais com alta circulação de pedestres vulneráveis — tais como portas de escolas, creches, "
+            "hospitais, estações de metrô/trem e pontos de parada de ônibus —, o chamado é elevado para prioridade URGENTE com prazo de atendimento "
+            "reduzido para até 24 horas corridas. A ausência de luminosidade nesses pontos agrava a vulnerabilidade a crimes contra o patrimônio e atropelamentos."
         ),
-        "keywords": ["rua inteira no escuro", "ponto de onibus escuro", "porta de escola apagada", "varios postes apagados", "apagao noturno", "seguranca publica", "ilumina sp"]
+        "keywords": ["postes apagados", "ponto de onibus", "escola", "poste apagado ponto de onibus", "escuridao na escola", "apagao no ponto", "ponto escuro hospital", "falta de luz ponto de onibus", "rua escura escola"]
     },
     {
         "id": "ilum_03",
         "source": _SOURCE,
         "urgency": "baixa",
         "category": "iluminacao",
-        "title": "Luminária Pública Acesa Durante o Dia (Defeito no Relé Fotoelétrico)",
+        "title": "Luminárias Acesas Durante o Dia por Falha no Relé Fotoelétrico",
         "content": (
-            "Lâmpadas de postes que permanecem continuamente acesas durante a luz do dia caracterizam falha mecânica ou eletrônica no relé "
-            "fotoelétrico (fotocélula) responsável por acionar o circuito no entardecer e desligar ao amanhecer. Embora não represente risco físico "
-            "imediato ao cidadão, acarreta desperdício de energia elétrica e redução da vida útil do equipamento. O reparo é classificado com urgência "
-            "BAIXA e prazo de regularização de até 72 horas úteis."
+            "Lâmpadas ou luminárias LED que permanecem constantemente acesas durante o período diurno com luz solar plena indicam defeito de contato "
+            "ou queima do sensor de relé fotoelétrico instalado na base superior da carcaça. Embora não comprometa a segurança viária imediata, o defeito "
+            "gera desperdício de energia elétrica e redução prematura da vida útil do equipamento. O prazo normativo para correção é de 48 horas úteis."
         ),
-        "keywords": ["poste aceso de dia", "lampada acesa de dia", "rele fotoeletrico quebrado", "fotocelula defeituosa", "desperdicio de luz"]
+        "keywords": ["lampada acesa de dia", "poste aceso de dia", "rele fotoeletrico", "luz acesa de dia", "desperdicio de energia poste"]
     },
     {
         "id": "ilum_04",
         "source": _SOURCE,
         "urgency": "URGENTE",
         "category": "iluminacao",
-        "title": "Poste Abalroado, Fiação Energizada Exposta e Risco de Eletrocussão",
+        "title": "Postes Metálicos de Iluminação Danificados por Abalroamento e Fiação Exposta",
         "content": (
-            "Situações em que postes de iluminação ou de distribuição de energia foram abalroados por colisões veiculares, encontram-se inclinados com "
-            "risco de queda ou possuem cabos elétricos caídos em calçadas/vias públicas (especialmente em dias de chuva e poças d'água) configuram "
-            "EMERGÊNCIA VITAL com risco imediato de choque elétrico fatal. O ZelaFix aciona em regime de urgência máxima a concessionária ENEL (0800 72 72 196), "
-            "a Ilumina SP e a CET para isolamento perimetral imediato e desligamento emergencial da rede pelo Centro de Operações."
+            "Postes metálicos de iluminação pública ou semafóricos atingidos por colisão de veículos (abalroamento), inclinados com risco de queda "
+            "ou com tampa de inspeção aberta na base expondo fios elétricos secundários devem ser atendidos em caráter emergencial em até 4 a 12 horas. "
+            "A Ilumina SP realiza o desenergizamento preventivo do circuito secundário, isolamento da base e substituição do braço ou poste avariado."
         ),
-        "keywords": ["poste caido", "fio solto", "fio no chao", "fio dando choque", "choque eletrico", "fio desencapado", "poste batido", "enel", "bombeiros"]
+        "keywords": ["poste batido", "carro bateu no poste", "poste inclinado", "tampa do poste aberta", "poste de luz quebrado", "poste amassado"]
     }
 ]
