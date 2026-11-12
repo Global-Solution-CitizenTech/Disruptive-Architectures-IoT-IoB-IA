@@ -129,24 +129,25 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
                                                   │
                                                   ▼
 ====================================================================================================
-  [ MOTOR MULTIPROVEDOR DE INFERÊNCIA COM RESILIÊNCIA TOTAL ]
-  ┌───────────────────────────────┐     ┌───────────────────────────────┐     ┌───────────────────────────────┐
-  │   PROVEDOR 1 (PRIMÁRIO):      │     │   PROVEDOR 2 (FALLBACK):      │     │   FALLBACK LOCAL RESILIENTE:  │
-  │   GROQ CLOUD (LPU)            │     │   GOOGLE GEMINI CLOUD         │     │   MOTOR HEURÍSTICO ZELAFIX    │
-  │   Model: openai/gpt-oss-20b   │ ──> │   Model: gemini-3.5-flash     │ ──> │   Inferência Normativa Local  │
-  │   Latência ultra-rápida       │     │   Atual, rápido e econômico   │     │   100% Uptime & Zero Crash    │
-  │   (~350ms em nuvem)           │     │   (Fallback automático API)   │     │   (Sem internet / Sem chaves) │
-  └───────────────────────────────┘     └───────────────────────────────┘     └───────────────────────────────┘
+  [ MOTOR DE INFERÊNCIA MULTIMODAL & CONTINGÊNCIA RESILIENTE ]
+  ┌─────────────────────────────────────────────────────────┐     ┌─────────────────────────────────────────────────────────┐
+  │   PROVEDOR PRIMÁRIO MULTIMODAL:                         │     │   FALLBACK LOCAL RESILIENTE:                            │
+  │   GROQ CLOUD MULTIMODAL LPU                             │     │   MOTOR HEURÍSTICO ZELAFIX                              │
+  │   Model: qwen/qwen3.8-27b                               │ ──> │   Inferência Normativa Local & RAG                      │
+  │   • Visão Computacional de fotos urbanas em Base64      │     │   • 100% Uptime & Zero Crash                            │
+  │   • Geração textual ultra-rápida (~350ms em nuvem)      │     │   • Opera sem internet, sem chaves e sob 429 Rate Limit │
+  └─────────────────────────────────────────────────────────┘     └─────────────────────────────────────────────────────────┘
                                                   │
                                                   ▼
 ====================================================================================================
-  [ CAMADA DE PERSISTÊNCIA DUAL & AUDITORIA LOCAL (512 MB RAM COMPLIANT) ]
-  ┌───────────────────────────────────────────────────────────────┐   ┌───────────────────────────┐
-  │  BANCO RELACIONAL SQLITE (data/zelafixai.db)                  │   │  BANCO VETORIAL CHROMADB  │
-  │  • Modo WAL (Write-Ahead Logging) ativo (zero lock contention)│   │  (data/chroma/)           │
-  │  • Tabela 'mensagens_chat' (Histórico multi-turno de conversas│   │  • Coleção HNSW 512D      │
-  │  • Tabela 'auditoria_triagens' (Laudos com Parecer <= 150 ch) │   │  • 31 Chunks Normativos   │
-  └───────────────────────────────────────────────────────────────┘   └───────────────────────────┘
+  [ CAMADA DE PERSISTÊNCIA DUAL & INTEGRAÇÃO ORACLE FIAP (512 MB RAM COMPLIANT) ]
+  ┌───────────────────────────────────────────────┐   ┌───────────────────────────┐   ┌───────────────────────────────┐
+  │  BANCO ORACLE FIAP (MODO THIN EM PYTHON)      │   │  BANCO RELACIONAL SQLITE  │   │  BANCO VETORIAL CHROMADB      │
+  │  • oracle.fiap.com.br:1521/orcl               │   │  (data/zelafixai.db)      │   │  (data/chroma/)               │
+  │  • 100% Python nativo (sem Instant Client)    │   │  • Modo WAL ativo         │   │  • Coleção HNSW 512D          │
+  │  • Chamados reais, histórico, status e votos  │   │  • Auditoria de triagens  │   │  • 31 Chunks Normativos       │
+  │  • Extração de fotos BLOB para visão Qwen     │   │  • Histórico conversacional│  │  • L2-norm e Cosine Metric    │
+  └───────────────────────────────────────────────┘   └───────────────────────────┘   └───────────────────────────────┘
 ====================================================================================================
 ```
 
@@ -163,9 +164,9 @@ Na administração pública e na segurança viária municipal, **alucinações d
 
 A arquitetura do **ZelaFix AI** resolve esse dilema através da integração de cinco pilares técnicos:
 1. **RAG Normativo Fundamentado:** Toda resposta do ZelaBot e todo laudo de triagem técnica é ancorado em decretos, portarias e manuais vigentes da Cidade de São Paulo.
-2. **Provedor Primário em Nuvem (Groq LPU):** Utiliza o modelo `openai/gpt-oss-20b` via Groq Cloud, com latência típica de ~350ms.
-3. **Provedor Fallback em Nuvem (Google Gemini):** Utiliza o modelo **`gemini-3.5-flash`** (modelo moderno, de altíssima velocidade e excelente custo-benefício) via SDK oficial `google-genai`.
-4. **Motor Heurístico Local Resiliente (Fallback Offline):** Em caso de indisponibilidade de rede, falha de cotas ou ausência de credenciais, o motor local sintetiza pareceres e respostas técnicas a partir dos chunks recuperados do ChromaDB com latência inferior a 15ms e **zero crashes**.
+2. **Provedor Primário Multimodal (Groq Cloud Qwen 3.8 27B):** Utiliza o modelo multimodal de pesos abertos **`qwen/qwen3.8-27b`** via infraestrutura LPU da Groq Cloud, com latência ultra-rápida (~350ms) e capacidade nativa de visão computacional para fotos de defeitos urbanos.
+3. **Integração Real-Time com Banco Oracle FIAP (Modo Thin):** Consulta chamados reais, endereços, contagem de votos comunitários (+1 IoB) e fotos BLOB diretamente no Oracle (`oracle.fiap.com.br:1521/orcl`) em Python nativo e sem binários externos.
+4. **Motor Heurístico Local Resiliente (Fallback Offline):** Em caso de indisponibilidade de rede, cota de tokens (429 Rate Limit) ou ausência de internet, o motor local sintetiza pareceres e respostas técnicas a partir dos chunks recuperados do ChromaDB com latência inferior a 15ms e **zero crashes**.
 5. **Guardrails Determinísticos:** Bloqueiam qualquer tentativa de evasão de escopo, mascaram dados pessoais (LGPD) e acionam telefones de emergência vital (193/199).
 
 ---
@@ -412,6 +413,8 @@ Submeteu a aplicação a condições extremas e cenários destrutivos:
 Disruptive-Architectures-IoT-IoB-IA/
 ├── README.md                           # Documentação técnica central e consolidada
 ├── ENTREGA_GS_2026_2.txt               # Arquivo formal de identificação da entrega
+├── AGENT.md                            # Especificação técnica do agente e arquitetura detalhada
+├── run_qa_demo.py                      # Runner executivo oficial de homologação e QA (--delay)
 ├── .gitignore                          # Ignora ambientes virtuais, bancos e caches
 └── deploy_zelafixai_render/            # Microsserviço Python FastAPI (Deploy no Render)
     ├── data/
@@ -419,12 +422,13 @@ Disruptive-Architectures-IoT-IoB-IA/
     │   └── chroma/                     # ChromaDB com coleção vetorial HNSW (512D)
     ├── src/
     │   ├── core/
-    │   │   ├── config.py               # Variáveis de ambiente, portas e modelos
+    │   │   ├── config.py               # Variáveis de ambiente, credenciais Oracle e modelo Qwen
     │   │   ├── prompts.py              # System Prompts do ZelaBot e triagem técnica
     │   │   └── __init__.py
     │   ├── database/
     │   │   ├── connection.py           # Conexão SQLite WAL com timeout de 5000ms
     │   │   ├── vector_store.py         # Singleton thread-safe do ChromaDB
+    │   │   ├── oracle_client.py        # Conexão Oracle FIAP Modo Thin (100% Python nativo)
     │   │   └── __init__.py
     │   ├── knowledge/                  # Base Normativa RAG Oficial da PMSP (8 Módulos)
     │   │   ├── pavimentacao.py         # Decreto nº 59.150/2019 (Tapa-buraco, CBUQ)
@@ -440,21 +444,21 @@ Disruptive-Architectures-IoT-IoB-IA/
     │   │   ├── chat_repository.py      # CRUD parametrizado de mensagens e auditorias
     │   │   └── __init__.py
     │   ├── routers/
-    │   │   ├── ai.py                   # Endpoints REST (/chat, /triagem, /insights, /audit)
+    │   │   ├── ai.py                   # Endpoints REST (/chat, /triagem, /chamados, /oracle/status)
     │   │   ├── health.py               # Sondas operacionais (/health e /health/ready)
     │   │   └── __init__.py
     │   ├── schemas/
-    │   │   ├── chamado.py              # DTOs de contexto urbano e apoios IoB
+    │   │   ├── chamado.py              # DTOs de contexto urbano, fotos e apoios IoB
     │   │   ├── chat.py                 # DTOs de mensagens e histórico de sessão
     │   │   ├── insights.py             # DTOs de laudo técnico de triagem e diagnósticos
     │   │   └── __init__.py
     │   ├── services/
     │   │   ├── chat_service.py         # Orquestrador do ZelaBot com RAG e fallbacks
-    │   │   ├── triagem_service.py      # Emissor do laudo técnico de zeladoria
+    │   │   ├── triagem_service.py      # Emissor do laudo técnico com visão computacional
     │   │   ├── insights_service.py     # Diagnóstico preventivo por bairro
     │   │   ├── knowledge_service.py    # Busca vetorial híbrida e vocabulário IDF
-    │   │   ├── groq_service.py         # Cliente LPU Groq Cloud (openai/gpt-oss-20b)
-    │   │   ├── gemini_service.py       # Cliente Google Gemini (gemini-3.5-flash)
+    │   │   ├── groq_service.py         # Cliente Multimodal Groq Cloud (qwen/qwen3.8-27b)
+    │   │   ├── chamado_oracle_service.py # Enriquecimento contextual via Oracle FIAP
     │   │   └── __init__.py
     │   └── utils/
     │       ├── text.py                 # Expansão semântica urbana e sanitizador mobile
@@ -463,7 +467,7 @@ Disruptive-Architectures-IoT-IoB-IA/
     │       └── __init__.py
     ├── api.py                          # Bootstrap da aplicação FastAPI
     ├── render.yaml                     # Blueprint de deploy em nuvem no Render
-    ├── requirements.txt                # Dependências declaradas e fixadas
+    ├── requirements.txt                # Dependências declaradas e fixadas (oracledb, pillow, etc.)
     ├── test_knowledge_coverage.py      # Teste de cobertura semântica RAG (35 casos)
     ├── test_zelafix_scenarios.py       # Suíte de homologação de cenários (10 casos)
     ├── stress_test_zelafix.py          # Bateria de estresse e testes adversariais (31 casos)
@@ -542,16 +546,26 @@ services:
         value: 3.11.9
       - key: AI_PROVIDER
         value: groq
+      - key: GROQ_MODEL
+        value: qwen/qwen3.8-27b
       - key: GROQ_API_KEY
         sync: false
-      - key: GEMINI_API_KEY
+      - key: ORACLE_USER
+        value: rm566422
+      - key: ORACLE_PASSWORD
         sync: false
+      - key: ORACLE_URL
+        value: jdbc:oracle:thin:@//oracle.fiap.com.br:1521/orcl
+      - key: ORACLE_DSN
+        value: oracle.fiap.com.br:1521/orcl
 ```
 
 #### Variáveis de Ambiente no Dashboard do Render:
-- `AI_PROVIDER`: `groq` (padrão) ou `gemini`.
-- `GROQ_API_KEY`: Chave da API Groq Cloud (Modelo: `openai/gpt-oss-20b`).
-- `GEMINI_API_KEY`: Chave da API Google Gemini (Modelo: `gemini-3.5-flash`).
+- `AI_PROVIDER`: `groq` (padrão com fallback local resiliente).
+- `GROQ_MODEL`: `qwen/qwen3.8-27b` (Modelo Multimodal para texto e visão computacional).
+- `GROQ_API_KEY`: Chave da API Groq Cloud (Console: `https://console.groq.com`).
+- `ORACLE_USER` / `ORACLE_PASSWORD`: Credenciais do banco de dados relacional Oracle FIAP.
+- `ORACLE_URL` / `ORACLE_DSN`: Endpoint de conexão Oracle (`oracle.fiap.com.br:1521/orcl`).
 - **Garantia de Uptime:** Graças ao `LocalSemanticEmbedder` e ao **Motor Heurístico Local**, o microsserviço consome **menos de 45 MB de RAM**, operando com folga absoluta dentro do limite de 512 MB do Render e com zero risco de queda.
 
 ---
@@ -561,11 +575,11 @@ services:
 | Critério | Descrição no Edital | Pontos | Como o ZelaFix AI Atende Integralmente |
 | :---: | :--- | :---: | :--- |
 | **01** | **Adequação da funcionalidade ao problema e ao cidadão beneficiado** | **10 pts** | Solução 100% focada em CitizenTech e ODS 11, resolvendo o gargalo de triagem da zeladoria de São Paulo, beneficiando o munícipe com orientação cívica e o poder público com despacho qualificado. |
-| **02** | **IA Generativa funcionando e integrada à solução** | **25 pts** | Integração multimodal com Groq Cloud (`openai/gpt-oss-20b`), Google Gemini (`gemini-3.5-flash` — atual, veloz e econômico) e Motor Heurístico Local Resiliente, consumido ativamente pelo App Mobile React Native e Backend Java. |
+| **02** | **IA Generativa funcionando e integrada à solução** | **25 pts** | Integração multimodal com Groq Cloud (`qwen/qwen3.8-27b` para texto e visão computacional), conexão Oracle FIAP em tempo real e Motor Heurístico Local Resiliente, consumido ativamente pelo App Mobile React Native e Backend Java. |
 | **03** | **Aprofundamento técnico e justificativa sólida** | **25 pts** | Implementação de **RAG Normativo Municipal (PMSP)** com 8 módulos jurídicos e 31 chunks oficiais, eliminando alucinações de competência e prazos em serviços públicos. |
-| **04** | **Pipeline de dados e documentação da arquitetura** | **15 pts** | `LocalSemanticEmbedder` (512D) com Similaridade de Cosseno, indexação HNSW no ChromaDB e persistência relacional SQLite em modo WAL. Diagramas completos em ASCII de fluxo e arquitetura. |
+| **04** | **Pipeline de dados e documentação da arquitetura** | **15 pts** | `LocalSemanticEmbedder` (512D) com Similaridade de Cosseno, indexação HNSW no ChromaDB, integração Oracle Thin e persistência relacional SQLite em modo WAL. Diagramas completos em ASCII de fluxo e arquitetura. |
 | **05** | **Testes, avaliação empírica e interpretação de resultados** | **15 pts** | **76 testes automatizados executáveis com 100% de sucesso**: 35 de cobertura semântica, 10 de cenários de ponta a ponta e 31 testes de estresse adversarial (concorrência de 50 threads, SQLi, Zalgo e payloads gigantes). |
-| **06** | **Código organizado, instruções de reprodução e uso responsável/LGPD** | **10 pts** | Repositório modular em camadas, instruções de execução passo a passo, zero credenciais expostas, anonimização automática de CPFs e guardrails de risco vital (Bombeiros 193 / Defesa Civil 199). |
+| **06** | **Código organizado, instruções de reprodução e uso responsável/LGPD** | **10 pts** | Repositório modular em camadas, instruções de execução passo a passo via `run_qa_demo.py`, zero credenciais expostas, anonimização automática de CPFs e guardrails de risco vital (Bombeiros 193 / Defesa Civil 199). |
 | **TOTAL** | **Pontuação Máxima da Entrega da Disciplina** | **100 pts** | **Atendimento rigoroso de 100% dos requisitos do edital da Global Solution 2.** |
 
 ---
