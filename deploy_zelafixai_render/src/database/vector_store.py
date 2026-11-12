@@ -117,6 +117,13 @@ class ChromaVectorStore:
                 for chunk in chunks
             ]
 
+            existentes = self._collection.get(include=[])
+            ids_atuais = set(existentes.get("ids") or [])
+            ids_orfaos = list(ids_atuais - set(ids))
+            if ids_orfaos:
+                self._collection.delete(ids=ids_orfaos)
+                logger.info(f"ChromaDB: {len(ids_orfaos)} chunks órfãos removidos.")
+
             upsert_kwargs: Dict[str, Any] = {
                 "ids": ids,
                 "documents": documents,
@@ -136,22 +143,26 @@ class ChromaVectorStore:
         self,
         query_embedding: List[float],
         top_k: int = 3,
-        min_score: float = RAG_MIN_SCORE
+        min_score: float = RAG_MIN_SCORE,
+        where: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """
-        Realiza consulta vetorial por similaridade no ChromaDB com query_embeddings pré-calculados.
-        Converte a distância de cosseno do Chroma (0 = idêntico, 2 = oposto)
-        em score de similaridade (1.0 - distância) normalizado.
+        Realiza consulta vetorial por similaridade no ChromaDB com filtro opcional por metadados.
+        Preserva todos os campos normativos incluindo `urgency`.
         """
         if not self._is_ready or self._collection is None or self.count == 0:
             return []
 
         try:
-            results = self._collection.query(
-                query_embeddings=[query_embedding],
-                n_results=top_k,
-                include=["documents", "metadatas", "distances"]
-            )
+            query_kwargs: Dict[str, Any] = {
+                "query_embeddings": [query_embedding],
+                "n_results": min(top_k, max(1, self.count)),
+                "include": ["documents", "metadatas", "distances"],
+            }
+            if where:
+                query_kwargs["where"] = where
+
+            results = self._collection.query(**query_kwargs)
 
             if not results or not results["ids"] or not results["ids"][0]:
                 return []
@@ -171,6 +182,7 @@ class ChromaVectorStore:
                         "source": meta.get("source", "chromadb_vector_store") if meta else "chromadb_vector_store",
                         "category": meta.get("category", "geral") if meta else "geral",
                         "title": meta.get("title", "") if meta else "",
+                        "urgency": meta.get("urgency", "baixa") if meta else "baixa",
                         "content": conteudo_limpo,
                         "similarity_score": score,
                         "vector_db": "ChromaDB"

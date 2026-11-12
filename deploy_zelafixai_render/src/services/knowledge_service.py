@@ -26,6 +26,7 @@ class KnowledgeService:
     _embeddings_chunks: List[List[float]] = []
     _tokens_chunks: List[Set[str]] = []
     _tokens_chunks_map: Dict[str, Set[str]] = {}
+    _raw_tokens_chunks_map: Dict[str, Set[str]] = {}
     _chunks_indexados: List[Dict[str, Any]] = []
     _indice_inicializado: bool = False
 
@@ -46,6 +47,7 @@ class KnowledgeService:
         doc_freqs: Counter = Counter()
         cls._tokens_chunks = []
         cls._tokens_chunks_map = {}
+        cls._raw_tokens_chunks_map = {}
         for chunk in cls._chunks_indexados:
             texto_completo = f"{chunk['title']} {chunk['content']} {' '.join(chunk.get('keywords', []))}"
             tokens = tokenizar_com_ngrams(texto_completo, n_max=2)
@@ -53,6 +55,7 @@ class KnowledgeService:
             set_tokens = set(tokens_expandidos)
             cls._tokens_chunks.append(set_tokens)
             cls._tokens_chunks_map[chunk["id"]] = set_tokens
+            cls._raw_tokens_chunks_map[chunk["id"]] = set(tokens)
             for t in set_tokens:
                 doc_freqs[t] += 1
 
@@ -98,22 +101,37 @@ class KnowledgeService:
         # Gera o embedding denso da consulta utilizando o vocabulário e expansão semântica
         embedding_query = LocalSemanticEmbedder.gerar_embedding(pergunta, idf_weights=cls._vocabulario_idf)
 
-        # 1. Tenta consulta direta no ChromaDB
+        tokens_originais = set(tokenizar_com_ngrams(pergunta, n_max=2))
+        tokens_query = set(expansao_semantica_urbana(list(tokens_originais)))
+
+        # 1. Tenta consulta direta no ChromaDB com filtro nativo e re-ranking híbrido lexical
         try:
             vector_store = get_vector_store()
             if vector_store.is_ready and vector_store.count > 0:
-                resultados_chroma = vector_store.search(embedding_query, top_k=top_k, min_score=RAG_MIN_SCORE)
+                where_filter = {"category": categoria_filtro} if categoria_filtro else None
+                resultados_chroma = vector_store.search(
+                    embedding_query,
+                    top_k=max(top_k * 3, 8),
+                    min_score=RAG_MIN_SCORE,
+                    where=where_filter,
+                )
                 if resultados_chroma:
                     if categoria_filtro:
-                        filtrados = [r for r in resultados_chroma if r.get("category") == categoria_filtro]
-                        if filtrados:
-                            return {"match_found": True, "chunks": filtrados}
-                    return {"match_found": True, "chunks": resultados_chroma}
+                        resultados_chroma = [r for r in resultados_chroma if r.get("category") == categoria_filtro]
+                    if resultados_chroma:
+                        for item in resultados_chroma:
+                            raw_chunk = cls._raw_tokens_chunks_map.get(item["id"], set())
+                            overlap_exato = len(tokens_originais.intersection(raw_chunk))
+                            tokens_chunk = cls._tokens_chunks_map.get(item["id"], set())
+                            overlap_sem = len(tokens_query.intersection(tokens_chunk))
+                            boost = (0.06 * min(overlap_exato, 4)) + (0.02 * min(overlap_sem, 3))
+                            item["similarity_score"] = round(min(1.0, item["similarity_score"] + boost), 4)
+                        resultados_chroma.sort(key=lambda x: x["similarity_score"], reverse=True)
+                        return {"match_found": True, "chunks": resultados_chroma[:top_k]}
         except Exception as e:
             logger.warning(f"Falha na consulta ao ChromaDB, chaveando para motor vetorial em memória: {e}")
 
         # 2. Motor Vetorial Resiliente em Memória
-        tokens_query = set(expansao_semantica_urbana(tokenizar_com_ngrams(pergunta, n_max=2)))
         scores = []
         for i, chunk in enumerate(cls._chunks_indexados):
             if categoria_filtro and chunk["category"] != categoria_filtro:
