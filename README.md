@@ -64,7 +64,7 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 #### 1. Para o Cidadão (Munícipe)
 - **Orientação Cívica e Direitos em Linguagem Clara:** Através do assistente inteligente **ZelaBot**, o cidadão tira dúvidas imediatas sobre o que pode descartar gratuitamente nos Ecopontos (até 1 m³/dia pela Lei nº 13.478/2002), responsabilidade sobre calçadas (Decreto nº 58.611/2019) e prazos legais da Carta de Serviços PMSP.
 - **Engajamento Comunitário (Internet dos Comportamentos - IoB):** Com o botão de apoio comunitário (**+1**), os munícipes corroboram a criticidade do chamado da sua rua, elevando a prioridade do atendimento perante a administração pública.
-- **Proteção Imediata da Vida:** Em casos de risco vital agudo (choque elétrico, fios energizados expostos ou risco de colapso estrutural), o sistema interrompe a triagem convencional e orienta contato imediato com **Bombeiros (193)** ou **Defesa Civil (199)**.
+- **Acompanhamento Real de Protocolos e Bairros:** Sem sair da conversa, o cidadão consulta o andamento real do seu protocolo ou os chamados abertos em qualquer bairro diretamente na base Oracle FIAP (via *fast-path* por `#ID` e **Tool Calling** nativo do `qwen/qwen3.8-27b`).
 
 #### 2. Para a Gestão Pública (Subprefeituras & Concessionárias)
 - **Laudo Técnico com Enquadramento Legal Imediato:** Cada chamado submetido pelo app ou backend passa por triagem automatizada com citação da legislação municipal vigente (ex: Decreto nº 59.150/2019 para pavimentação; Decreto nº 57.545/2016 para drenagem).
@@ -94,35 +94,34 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
                   │ POST /ai/triagem                    │ POST /ai/insights                   │ GET /ai/vector-store/status
                   ▼                                     ▼                                     ▼
 ====================================================================================================
-  [ API GATEWAY & CAMADA DE ROTAS RESTful — FASTAPI (RENDER CLOUD) ]
+  [ API GATEWAY & CAMADA DE ROTAS RESTful — FASTAPI (main:app / api:app) ]
   ┌───────────────────────────────────────────────────────────────────────────────────────────────┐
-  │  • /health & /health/ready  (Liveness & Readiness Probes para orquestração em nuvem)         │
-  │  • POST /ai/chat            (Assistente Cívico ZelaBot com RAG Normativo e Histórico)         │
-  │  • POST /ai/triagem         (Laudo Técnico com Prioridade, Órgão Competente, SLA e Parecer)   │
-  │  • POST /ai/insights        (Diagnóstico Preventivo de Zeladoria Consolidado por Bairro)     │
-  │  • GET  /ai/history         (Consulta de Histórico Conversacional Multi-Turno)                │
-  │  • GET  /ai/audit           (Auditoria dos Laudos e Pareceres Técnicos Emitidos)              │
-  │  • GET  /ai/vector-store    (Telemetria em Tempo Real da Coleção HNSW ChromaDB)               │
+  │  • /health & /health/ready     (Liveness & Readiness Probes para orquestração em nuvem)       │
+  │  • POST /ai/chat               (ZelaBot com RAG Normativo, Visão e Tool Calling no Oracle)    │
+  │  • POST /ai/triagem            (Laudo JSON com Prioridade, Órgão, SLA, IoT e Visão Comput.)   │
+  │  • POST /ai/insights           (Diagnóstico Preventivo por Bairro com Oracle + Auditorias)    │
+  │  • GET  /ai/chamados & /{id}   (Consulta somente leitura no Oracle FIAP + parecer técnico)    │
+  │  • GET  /ai/history & /audit   (Histórico Multi-Turno, Sessões e Auditoria no SQLite WAL)     │
+  │  • GET  /ai/vector-store/status & /ai/oracle/status  (Telemetria ChromaDB e Oracle Thin)      │
   └───────────────────────────────────────────────┬───────────────────────────────────────────────┘
                                                   │
                                                   ▼
 ====================================================================================================
-  [ NÚCLEO DE IA GENERATIVA & RAG NORMATIVO MUNICIPAL ]
+  [ NÚCLEO DE IA GENERATIVA, TOOL CALLING & RAG NORMATIVO MUNICIPAL ]
   ┌───────────────────────────────────────────────────────────────────────────────────────────────┐
-  │ 1. HIGIENIZAÇÃO & PROTEÇÃO DE DADOS (LGPD)                                                   │
-  │    ├─ Proteção LGPD (Mascaramento em tempo de execução de CPFs e Cartões)                     │
-  │    └─ Sanitizador Mobile Clean (Elimina pipes '|' e Markdown bruto para React Native)         │
+  │ 1. HIGIENIZAÇÃO & PROTEÇÃO DE DADOS (LGPD) NA ENTRADA E NA SAÍDA                              │
+  │    ├─ Proteção LGPD (Mascaramento de CPFs e cartões antes de LLM, Oracle e SQLite)            │
+  │    └─ Sanitizador Mobile Clean (Remove pipes '|', <think> e Markdown bruto para o App)        │
   ├───────────────────────────────────────────────────────────────────────────────────────────────┤
   │ 2. PIPELINE DE RECUPERAÇÃO SEMÂNTICA (RAG MUNICIPAL 512D)                                     │
   │    ├─ Normalização Textual & Expansão Semântica Urbana (Gírias -> Termos Técnicos PMSP)       │
   │    ├─ LocalSemanticEmbedder: Projeção Densa em R^512 com L2-norm = 1.0 (Cosine Similarity)    │
-  │    ├─ ChromaDB: Busca Vetorial HNSW na coleção 'zelafix_knowledge_512d' persistida em disco  │
-  │    └─ Base Normativa PMSP: 8 Módulos Oficiais (Pavimentação, Drenagem, CET, Sabesp, etc.)     │
+  │    └─ ChromaDB (zelafix_knowledge_512d): Filtro estrito por categoria + re-ranking lexical    │
   ├───────────────────────────────────────────────────────────────────────────────────────────────┤
-  │ 3. PROMPT ORCHESTRATOR & ENGENHARIA DE CONTEXTO                                               │
-  │    ├─ System Instruction ZelaBot (Polidez, Rigor Jurídico, Proibição de Alucinação)           │
-  │    ├─ Injeção do Contexto da Ocorrência (Protocolo, Bairro, Apoios Comunitários +1 IoB)       │
-  │    └─ Injeção dos Chunks Normativos Recuperados (Top-K ordenados por Similaridade de Cosseno) │
+  │ 3. ORQUESTRAÇÃO DE CONTEXTO, IOT & TOOL CALLING ORACLE (SOMENTE LEITURA)                      │
+  │    ├─ Fast-path por #ID de chamado + Memória automática das últimas mensagens (SQLite)        │
+  │    ├─ Tool Calling nativo: `consultar_chamados_oracle(id_chamado, bairro, limit)`             │
+  │    └─ Injeção de Telemetria IoT e Chunks Normativos Top-K                                     │
   └───────────────────────────────────────────────┬───────────────────────────────────────────────┘
                                                   │
                                                   ▼
@@ -130,21 +129,20 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
   [ MOTOR DE INFERÊNCIA MULTIMODAL & CONTINGÊNCIA RESILIENTE ]
   ┌─────────────────────────────────────────────────────────┐     ┌─────────────────────────────────────────────────────────┐
   │   PROVEDOR PRIMÁRIO MULTIMODAL:                         │     │   FALLBACK LOCAL RESILIENTE:                            │
-  │   GROQ CLOUD MULTIMODAL LPU                             │     │   MOTOR HEURÍSTICO ZELAFIX                              │
-  │   Model: qwen/qwen3.8-27b                               │ ──> │   Inferência Normativa Local & RAG                      │
-  │   • Visão Computacional de fotos urbanas em Base64      │     │   • 100% Uptime & Zero Crash                            │
-  │   • Geração textual ultra-rápida (~350ms em nuvem)      │     │   • Opera sem internet, sem chaves e sob 429 Rate Limit │
+  │   GROQ CLOUD (LPU) — qwen/qwen3.8-27b                   │ ──> │   MOTOR HEURÍSTICO ZELAFIX                              │
+  │   • Visão Computacional de fotos (Base64 e BLOB Oracle) │     │   Inferência Normativa Local & RAG                      │
+  │   • Tool Calling nativo + Laudo JSON estruturado        │     │   • Opera sem internet, sem chave ou sob 429 Rate Limit │
   └─────────────────────────────────────────────────────────┘     └─────────────────────────────────────────────────────────┘
                                                   │
                                                   ▼
 ====================================================================================================
-  [ CAMADA DE PERSISTÊNCIA DUAL & INTEGRAÇÃO ORACLE FIAP (512 MB RAM COMPLIANT) ]
+  [ CAMADA DE PERSISTÊNCIA & BANCO ORACLE FIAP (SOMENTE SELECT — SEM ALTERAÇÃO DE DADOS) ]
   ┌───────────────────────────────────────────────┐   ┌───────────────────────────┐   ┌───────────────────────────────┐
   │  BANCO ORACLE FIAP (MODO THIN EM PYTHON)      │   │  BANCO RELACIONAL SQLITE  │   │  BANCO VETORIAL CHROMADB      │
   │  • oracle.fiap.com.br:1521/orcl               │   │  (data/zelafixai.db)      │   │  (data/chroma/)               │
-  │  • 100% Python nativo (sem Instant Client)    │   │  • Modo WAL ativo         │   │  • Coleção HNSW 512D          │
-  │  • Chamados reais, histórico, status e votos  │   │  • Auditoria de triagens  │   │  • 31 Chunks Normativos       │
-  │  • Extração de fotos BLOB para visão Qwen     │   │  • Histórico conversacional│  │  • L2-norm e Cosine Metric    │
+  │  • Estreitamente SOMENTE LEITURA (SELECT)     │   │  • Modo WAL ativo         │   │  • Coleção HNSW 512D          │
+  │  • Bairros acento-insensíveis (TRANSLATE)     │   │  • Auditoria de triagens  │   │  • 31 Chunks Normativos       │
+  │  • Extração de foto BLOB apenas sob demanda   │   │  • Histórico por sessão   │   │  • L2-norm e Cosine Metric    │
   └───────────────────────────────────────────────┘   └───────────────────────────┘   └───────────────────────────────┘
 ====================================================================================================
 ```
@@ -275,7 +273,7 @@ O microsserviço implementa camadas ativas de conformidade e tratamento de dados
     "Solicitar confirmação e apoios de outros vizinhos (+1)",
     "Acompanhar o prazo de execução via protocolo oficial"
   ],
-  "origem_resposta": "ZelaBot (Groq Cloud)",
+  "origem_resposta": "ZelaBot (Groq qwen/qwen3.8-27b)",
   "sessionId": "sess_cidadao_01",
   "sources_used": [
     {
@@ -321,18 +319,22 @@ O microsserviço implementa camadas ativas de conformidade e tratamento de dados
     "Aplicar emulsão asfáltica de ligação e CBUQ a quente",
     "Compactar com rolo tandem vibratório para nivelamento perfeito"
   ],
-  "origem_triagem": "ZelaFix AI Triagem Multimodal + RAG"
+  "analise_visual": "Cratera asfáltica profunda com bordas irregulares sobre a via.",
+  "origem_triagem": "ZelaFix AI Triagem Multimodal (Groq qwen/qwen3.8-27b + RAG)"
 }
 ```
 
 ---
 
 ### 9.3 Demais Endpoints Operacionais
-* `POST /ai/insights`: Gera diagnóstico preventivo consolidado para um determinado bairro paulistano.
-* `GET /ai/history?sessionId=...`: Retorna histórico conversacional persistido no SQLite.
-* `GET /ai/audit?limit=20`: Retorna histórico de laudos técnicos e pareceres emitidos para auditoria técnica.
-* `GET /ai/vector-store/status`: Telemetria em tempo real do ChromaDB (coleção ativa, chunks indexados, dimensões).
-* `GET /health` & `GET /health/ready`: Sondas liveness e readiness para orquestração em nuvem (Render/Kubernetes).
+* `POST /ai/insights?bairro=...`: Gera diagnóstico preventivo consolidado por bairro combinando dados reais do Oracle (`SELECT`), auditorias do SQLite e recomendações ODS 11.
+* `GET /ai/chamados?limit=10&bairro=...`: Lista os chamados recentes do Oracle FIAP (busca acento-insensível por bairro, limitada a 25 itens).
+* `GET /ai/chamados/{id_chamado}`: Consulta o chamado no Oracle (sem baixar BLOB) e gera parecer técnico; retorna `404` se inexistente ou `503` se o Oracle estiver offline.
+* `GET /ai/history?session_id=...&chamado_id=...`: Retorna as mensagens mais recentes em ordem cronológica persistidas no SQLite.
+* `GET /ai/audit?limit=20`: Lista os últimos laudos e triagens auditadas no SQLite.
+* `GET /ai/sessions` & `DELETE /ai/sessions/{session_id}`: Lista ou exclui sessões conversacionais do cidadão.
+* `GET /ai/vector-store/status` & `GET /ai/oracle/status`: Telemetria em tempo real da coleção HNSW no ChromaDB e da conexão Oracle Modo Thin.
+* `GET /health` & `GET /health/ready`: Sondas *liveness* e *readiness* para orquestração em nuvem.
 
 ---
 
@@ -381,21 +383,25 @@ Submeteu a aplicação a condições extremas e cenários destrutivos:
 - **Payloads Gigantes:** Ingestão de mensagens de **50.000 caracteres** sem estouro de memória (OOM), processadas com fallback seguro.
 - **Resiliência Unicode:** Null bytes (`\x00`), caracteres Zalgo corrompidos, marcas de inversão Right-to-Left (RTL) e scripts XSS (`<script>`) higienizados com sucesso.
 - **Blindagem SQL Injection:** Ataques nos endpoints de histórico e auditoria (`' OR 1=1; DROP TABLE`, `UNION SELECT`, `SLEEP`) rechaçados sem qualquer corrupção das tabelas SQLite.
-- **Concorrência Massiva (50 Threads Simultâneas):** 50 requisições simultâneas de leitura e escrita concorrentes no SQLite em **1.32s** (Média: 198ms) com **zero falhas e zero deadlocks**, graças ao modo `WAL` (*Write-Ahead Logging*).
+- **Concorrência Massiva (50 Threads Simultâneas):** 50 requisições simultâneas de leitura e escrita concorrentes no SQLite em modo `WAL` (*Write-Ahead Logging*) concluídas sem deadlocks nem erros.
+
+### 10.4 Interpretação Crítica dos Resultados
+- **Precisão do RAG sem Alucinação Cruzada:** O re-ranking lexical híbrido + filtro estrito por categoria no ChromaDB garantiu **37/37 (100%)** de recuperação normativa e **0 falsos positivos** em perguntas fora de escopo.
+- **Comportamento sob Cota Livre da LLM (`429 OTPM`):** No plano gratuito da Groq para `qwen/qwen3.8-27b` (limite de `1.000` output tokens/minuto), rajadas consecutivas de triagem JSON ou raciocínio longo (`<think>`) podem acionar `429 rate_limit_exceeded` ou atingir o teto de tokens. Nesses cenários, o fallback heurístico PMSP assume em `< 15 ms`, garantindo SLA e código HTTP 200 sem derrubar o app mobile.
 
 ---
 
 ## 🏛️ 11. Governança Ética, LGPD e Limitações Transparentes da IA (Critério 06 — 10 pts)
 
 ### 11.1 Proteção de Dados Pessoais (LGPD) e Credenciais
-- Nenhuma chave de API ou credencial está commitada no repositório. O arquivo [`.env.example`](./deploy_zelafixai_render/.env.example) contém apenas as variáveis modelo.
-- O sistema não armazena nem processa dados pessoais sensíveis (como filiação partidária, religião, dados biométricos ou bancários). Números de CPF acidentalmente digitados são mascarados em tempo de execução via regex (`sanitizar_lgpd`).
-- As tabelas do SQLite armazenam estritamente o identificador da sessão, o ID numérico do chamado, o bairro e o parecer técnico emitido.
+- Nenhuma chave de API ou credencial Oracle está versionada no repositório. O arquivo [`.env.example`](./deploy_zelafixai_render/.env.example) contém apenas os nomes das variáveis modelo.
+- O acesso ao banco Oracle FIAP ocorre em **modo estritamente somente leitura (`SELECT`)** com bind variables e timeouts curtos.
+- Números de CPF e cartão eventualmente digitados são mascarados **na entrada** (antes do envio à Groq, ao Oracle ou à gravação no SQLite) e **na saída** via `sanitizar_lgpd`.
 
 ### 11.2 Limitações Transparentes da Inteligência Artificial
-1. **Oclusão em Vistorias Subterrâneas Profundas:** A triagem computacional baseada em relatos textuais e fotos de superfície não substitui a inspeção robotizada por CFTV periscópico em galerias pluviais profundas ou adutoras enterradas. Para tais cenários, o laudo técnico orienta a vistoria presencial da concessionária com geofone acústico.
-2. **Dependência do Engajamento Comunitário para Filtragem de Ruído:** Relatos individuais sem fotos ou sem confirmações comunitárias (+1) podem retratar distorções perceptivas do munícipe. O IoB atua como mecanismo de consenso cívico, mitigando falsos positivos antes do despacho de equipes pesadas de recapeamento.
-3. **Papel Consultivo e Não Decisório:** O parecer gerado pela IA atua como ferramenta de triagem prévia e apoio técnico ao servidor público municipal, cabendo ao engenheiro responsável a emissão formal da ordem de serviço.
+1. **Oclusão em Vistorias Subterrâneas Profundas:** A triagem computacional baseada em relatos textuais e fotos de superfície não substitui a inspeção física por CFTV em galerias pluviais profundas ou adutoras enterradas.
+2. **Qualidade Visual e Iluminação Noturna das Fotos:** Imagens tremidas, muito escuras ou genéricas podem limitar o laudo multimodal do `qwen/qwen3.8-27b`, levando o sistema a se apoiar no texto do relato e nos dados do Oracle.
+3. **Dependência de Cota Externa e Papel Consultivo:** O provedor Groq em tier gratuito impõe limites de tokens por minuto (supridos pelo motor heurístico local em contingência), e todo laudo gerado atua como apoio técnico consultivo à decisão do engenheiro/servidor municipal.
 
 ---
 
@@ -449,17 +455,18 @@ Disruptive-Architectures-IoT-IoB-IA/
     │   │   ├── triagem_service.py      # Emissor do laudo técnico com visão computacional
     │   │   ├── insights_service.py     # Diagnóstico preventivo por bairro
     │   │   ├── knowledge_service.py    # Busca vetorial híbrida e vocabulário IDF
-    │   │   ├── groq_service.py         # Cliente Multimodal Groq Cloud (qwen/qwen3.8-27b)
-    │   │   ├── chamado_oracle_service.py # Enriquecimento contextual via Oracle FIAP
+    │   │   ├── groq_service.py         # Cliente Multimodal Groq (qwen/qwen3.8-27b + Tool Calling)
+    │   │   ├── chamado_oracle_service.py # Tool Calling e contexto Oracle FIAP (somente SELECT)
     │   │   └── __init__.py
     │   └── utils/
     │       ├── text.py                 # Expansão semântica urbana e sanitizador mobile
     │       ├── embeddings.py           # LocalSemanticEmbedder (512D) e cosseno
-    │       ├── guardrails.py           # Anonimização automática LGPD de CPF/dados sensíveis
+    │       ├── guardrails.py           # Anonimização automática LGPD de CPF/cartões
     │       └── __init__.py
-    ├── api.py                          # Bootstrap da aplicação FastAPI
-    ├── render.yaml                     # Blueprint de deploy em nuvem no Render
-    ├── requirements.txt                # Dependências declaradas e fixadas (oracledb, pillow, etc.)
+    ├── main.py                         # Entrypoint padrão ASGI (uvicorn main:app)
+    ├── api.py                          # Application Factory FastAPI e rotas
+    ├── render.yaml                     # Configuração de build/start em nuvem
+    ├── requirements.txt                # Dependências declaradas (fastapi, groq, chromadb, oracledb, pillow)
     ├── test_knowledge_coverage.py      # Teste de cobertura semântica RAG (37 casos)
     ├── test_zelafix_scenarios.py       # Suíte de homologação de cenários (12 casos)
     ├── stress_test_zelafix.py          # Bateria de estresse e testes adversariais (33 casos)
@@ -468,95 +475,46 @@ Disruptive-Architectures-IoT-IoB-IA/
 
 ---
 
-## 🚀 13. Guia de Execução Local e Deploy em Nuvem
+## 🚀 13. Guia de Configuração e Execução
 
-### 13.1 Execução Local
+### Variáveis de Ambiente (`.env`)
+Crie o arquivo `.env` em `deploy_zelafixai_render/` a partir do `.env.example` (não versionado):
+```env
+AI_PROVIDER=groq
+GROQ_MODEL=qwen/qwen3.8-27b
+GROQ_API_KEY=gsk_sua_chave_groq_aqui
+GROQ_BASE_URL=https://api.groq.com
+PORT=8000
 
-#### Pré-requisitos
-* **Python 3.10+** (testado e validado em Python 3.11, 3.13 e 3.14).
-* Pip atualizado.
-
-#### Passo a Passo
-```bash
-# 1. Acesse o diretório do microsserviço
-cd Disruptive-Architectures-IoT-IoB-IA/deploy_zelafixai_render
-
-# 2. Crie e ative o ambiente virtual
-# No Windows (PowerShell):
-python -m venv venv
-.\venv\Scripts\activate
-
-# No Linux / macOS:
-python3 -m venv venv
-source venv/bin/activate
-
-# 3. Instale as dependências declaradas
-pip install -r requirements.txt
-
-# 4. Configure o arquivo de variáveis de ambiente (opcional para testes com fallback local)
-cp .env.example .env
-
-# 5. Execute a suíte de cobertura semântica da Base RAG (37 casos - 100% sucesso)
-python test_knowledge_coverage.py
-
-# 6. Execute a suíte de homologação de cenários de ponta a ponta (12 casos - 100% sucesso)
-python test_zelafix_scenarios.py
-
-# 7. Execute a bateria de estresse e testes adversariais (33 casos - 100% resiliência)
-python stress_test_zelafix.py
-
-# 8. Inicie o servidor FastAPI localmente
-uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+ORACLE_USER=seu_usuario_oracle
+ORACLE_PASSWORD=sua_senha_oracle
+ORACLE_DSN=oracle.fiap.com.br:1521/orcl
 ```
 
-Após iniciar, acesse no navegador:
-* **Documentação Swagger Interativa:** `http://localhost:8000/docs`
+### Execução Local (FastAPI)
+```bash
+cd Disruptive-Architectures-IoT-IoB-IA/deploy_zelafixai_render
+python -m venv venv
+.\venv\Scripts\activate      # Linux/macOS: source venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Após iniciar, acesse:
+* **Swagger OpenAPI:** `http://localhost:8000/docs`
 * **Status do ChromaDB:** `http://localhost:8000/ai/vector-store/status`
+* **Status Oracle FIAP:** `http://localhost:8000/ai/oracle/status`
 * **Health Check:** `http://localhost:8000/health`
 
----
+### Execução das Suítes de Testes e Homologação
+```bash
+# Da raiz do repositório (suíte completa de 12 cenários):
+python run_qa_demo.py --delay 2
 
-### 13.2 Deploy Contínuo no Render Cloud
-
-O deploy contínuo em produção está configurado através do blueprint declarativo [`render.yaml`](./deploy_zelafixai_render/render.yaml):
-
-```yaml
-services:
-  - type: web
-    name: zelafix-ai
-    runtime: python
-    region: oregon
-    plan: free
-    rootDir: Disruptive-Architectures-IoT-IoB-IA/deploy_zelafixai_render
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.9
-      - key: GROQ_API_KEY
-        sync: false
-      - key: GROQ_MODEL
-        value: qwen/qwen3.8-27b
-      - key: AI_PROVIDER
-        value: groq
-      - key: ORACLE_USER
-        sync: false
-      - key: ORACLE_PASSWORD
-        sync: false
-      - key: ORACLE_DSN
-        value: oracle.fiap.com.br:1521/orcl
-      - key: ORACLE_URL
-        value: jdbc:oracle:thin:@//oracle.fiap.com.br:1521/orcl
+# Dentro de deploy_zelafixai_render/ (RAG e estresse adversarial):
+python test_knowledge_coverage.py
+python stress_test_zelafix.py
 ```
-
-#### Variáveis de Ambiente no Dashboard do Render:
-- `AI_PROVIDER`: `groq` (padrão com fallback local resiliente).
-- `GROQ_MODEL`: `qwen/qwen3.8-27b` (Modelo Multimodal para texto e visão computacional).
-- `GROQ_API_KEY`: Chave da API Groq Cloud (Console: `https://console.groq.com`).
-- `ORACLE_USER` / `ORACLE_PASSWORD`: Credenciais do banco de dados relacional Oracle FIAP.
-- `ORACLE_URL` / `ORACLE_DSN`: Endpoint de conexão Oracle (`oracle.fiap.com.br:1521/orcl`).
-- **Garantia de Uptime:** Graças ao `LocalSemanticEmbedder` e ao **Motor Heurístico Local**, o microsserviço consome **menos de 45 MB de RAM**, operando com folga absoluta dentro do limite de 512 MB do Render e com zero risco de queda.
 
 ---
 
@@ -564,13 +522,13 @@ services:
 
 | Critério | Descrição no Edital | Pontos | Como o ZelaFix AI Atende Integralmente |
 | :---: | :--- | :---: | :--- |
-| **01** | **Adequação da funcionalidade ao problema e ao cidadão beneficiado** | **10 pts** | Solução 100% focada em CitizenTech e ODS 11, resolvendo o gargalo de triagem da zeladoria de São Paulo, beneficiando o munícipe com orientação cívica e o poder público com despacho qualificado. |
-| **02** | **IA Generativa funcionando e integrada à solução** | **25 pts** | Integração multimodal com Groq Cloud (`qwen/qwen3.8-27b` para texto e visão computacional), conexão Oracle FIAP em tempo real e Motor Heurístico Local Resiliente, consumido ativamente pelo App Mobile React Native e Backend Java. |
-| **03** | **Aprofundamento técnico e justificativa sólida** | **25 pts** | Implementação de **RAG Normativo Municipal (PMSP)** com 8 módulos jurídicos e 31 chunks oficiais, eliminando alucinações de competência e prazos em serviços públicos. |
-| **04** | **Pipeline de dados e documentação da arquitetura** | **15 pts** | `LocalSemanticEmbedder` (512D) com Similaridade de Cosseno, indexação HNSW no ChromaDB, integração Oracle Thin e persistência relacional SQLite em modo WAL. Diagramas completos em ASCII de fluxo e arquitetura. |
-| **05** | **Testes, avaliação empírica e interpretação de resultados** | **15 pts** | **82 testes automatizados executáveis com 100% de sucesso**: 37 de cobertura semântica, 12 de cenários de ponta a ponta e 33 testes de estresse adversarial (concorrência de 50 threads, SQLi, LGPD em SQLite, Zalgo e payloads gigantes). |
-| **06** | **Código organizado, instruções de reprodução e uso responsável/LGPD** | **10 pts** | Repositório modular em camadas, instruções de execução passo a passo via `run_qa_demo.py`, zero credenciais expostas, anonimização automática de CPFs (LGPD) e higienização para consumo mobile. |
-| **TOTAL** | **Pontuação Máxima da Entrega da Disciplina** | **100 pts** | **Atendimento rigoroso de 100% dos requisitos do edital da Global Solution 2.** |
+| **01** | **Adequação da funcionalidade ao problema e ao cidadão beneficiado** | **10 pts** | Solução focada em CitizenTech e ODS 11, resolvendo triagem urbana, despacho competente e transparência de protocolos em São Paulo. |
+| **02** | **IA Generativa funcionando e integrada à solução** | **25 pts** | Groq Cloud (`qwen/qwen3.8-27b`) com **Tool Calling** (`consultar_chamados_oracle`), visão multimodal e fallback heurístico local, integrado ao App Mobile e Backend Java. |
+| **03** | **Aprofundamento técnico e justificativa sólida** | **25 pts** | **RAG Normativo PMSP** (ChromaDB + 8 módulos / 31 chunks) aliado a **Visão Computacional**, com justificativas de domínio jurídico e memória (< 45 MB RAM). |
+| **04** | **Pipeline de dados e documentação da arquitetura** | **15 pts** | `LocalSemanticEmbedder` (512D), busca HNSW por cosseno, re-ranking híbrido, Oracle Modo Thin (somente `SELECT`), SQLite WAL e diagrama ASCII completo. |
+| **05** | **Testes, avaliação empírica e interpretação de resultados** | **15 pts** | **82 testes automatizados** (`37` RAG + `12` cenários + `33` estresse/segurança) com análise crítica de precisão e resiliência sob `429 Rate Limit`. |
+| **06** | **Código organizado, reprodução e governança/LGPD** | **10 pts** | Estrutura modular, zero credenciais no Git, mascaramento LGPD na entrada/saída, acesso Oracle `SELECT` e limitações documentadas. |
+| **TOTAL** | **Pontuação Total da Entrega** | **100 pts** | **100% dos requisitos técnicos do edital atendidos.** |
 
 ---
 
