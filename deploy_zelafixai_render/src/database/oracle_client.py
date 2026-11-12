@@ -5,9 +5,11 @@ Global Solution 2 — Disruptive Architectures: IoT, IoB & Generative IA (FIAP 2
 Executa exclusivamente consultas SELECT parametrizadas com limites e timeouts defensivos.
 """
 import os
+import time
 import logging
 from typing import Optional, Dict, Any, List, Tuple
 from src.core.config import ORACLE_USER, ORACLE_PASSWORD, ORACLE_URL, ORACLE_DSN
+from src.utils.text import normalizar_texto
 
 logger = logging.getLogger("ZelaFixAI.OracleClient")
 
@@ -26,6 +28,24 @@ class OracleClient:
     Gerenciador SOMENTE LEITURA de acesso ao banco relacional Oracle da FIAP.
     Todas as operações utilizam exclusivamente SELECT com bind variables e timeouts.
     """
+
+    _bairros_cache: List[str] = []
+    _bairros_cache_exp: float = 0.0
+    _SQL_BAIRRO_NORM = (
+        "TRANSLATE(LOWER(b.nm_bairro), "
+        "'áàâãäéèêëíìîïóòôõöúùûüç', "
+        "'aaaaaeeeeiiiiooooouuuuc')"
+    )
+
+    @staticmethod
+    def _preparar_filtro_bairro(bairro: Optional[str]) -> Tuple[Optional[str], str]:
+        """Normaliza o filtro de bairro sem acentos para busca LIKE no Oracle."""
+        if not bairro or not bairro.strip():
+            return None, "%"
+        termo = normalizar_texto(bairro)
+        if not termo:
+            return None, "%"
+        return termo, f"%{termo}%"
 
     @classmethod
     def _obter_config(cls) -> Dict[str, Any]:
@@ -199,6 +219,40 @@ class OracleClient:
         return dados
 
     @classmethod
+    def listar_bairros_cadastrados(cls, ttl_seconds: int = 300) -> List[str]:
+        """
+        Lista bairros reais cadastrados na tabela BAIRRO do Oracle (somente SELECT),
+        com cache em memória para evitar consultas repetidas e listas fixas no código.
+        """
+        agora = time.monotonic()
+        if cls._bairros_cache and agora < cls._bairros_cache_exp:
+            return list(cls._bairros_cache)
+
+        conn = cls._conectar()
+        if not conn:
+            return list(cls._bairros_cache)
+
+        bairros: List[str] = []
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT DISTINCT nm_bairro FROM bairro WHERE nm_bairro IS NOT NULL ORDER BY nm_bairro"
+                )
+                bairros = [str(row[0]).strip() for row in cursor.fetchall() if row[0] and str(row[0]).strip()]
+            if bairros:
+                cls._bairros_cache = bairros
+                cls._bairros_cache_exp = agora + ttl_seconds
+        except Exception as e:
+            logger.warning(f"Erro ao listar bairros cadastrados no Oracle: {e}")
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+        return list(bairros or cls._bairros_cache)
+
+    @classmethod
     def listar_chamados_recentes(cls, limit: int = 10, bairro: Optional[str] = None) -> List[Dict[str, Any]]:
         """Lista os chamados mais recentes cadastrados no Oracle (somente leitura, limitado)."""
         conn = cls._conectar()
@@ -206,7 +260,8 @@ class OracleClient:
             return []
 
         limite_seguro = max(1, min(int(limit), 25))
-        query = """
+        bairro_norm, bairro_like = cls._preparar_filtro_bairro(bairro)
+        query = f"""
             SELECT
                 c.id_chamado,
                 c.titulo,
@@ -226,7 +281,7 @@ class OracleClient:
             LEFT JOIN categoria cat ON c.categoria_id_categoria = cat.id_categoria
             LEFT JOIN endereco e ON c.endereco_id_endereco = e.id_endereco
             LEFT JOIN bairro b ON e.bairro_id_bairro = b.id_bairro
-            WHERE (:bairro IS NULL OR LOWER(b.nm_bairro) LIKE LOWER(:bairro_like))
+            WHERE (:bairro_norm IS NULL OR {cls._SQL_BAIRRO_NORM} LIKE :bairro_like)
             ORDER BY c.id_chamado DESC
             FETCH FIRST :limit ROWS ONLY
         """
@@ -234,8 +289,7 @@ class OracleClient:
         chamados = []
         try:
             with conn.cursor() as cursor:
-                bairro_like = f"%{bairro}%" if bairro else "%"
-                cursor.execute(query, bairro=bairro, bairro_like=bairro_like, limit=limite_seguro)
+                cursor.execute(query, bairro_norm=bairro_norm, bairro_like=bairro_like, limit=limite_seguro)
                 for row in cursor.fetchall():
                     dt_str = row[4].strftime("%d/%m/%Y") if row[4] else ""
                     chamados.append({
@@ -267,9 +321,9 @@ class OracleClient:
             return {"oracle_online": False, "bairro": bairro, "total_chamados": 0, "total_votos": 0, "por_categoria": {}}
 
         bairro_limpo = bairro.strip() if bairro and bairro.strip() else None
-        bairro_like = f"%{bairro_limpo}%" if bairro_limpo else "%"
+        bairro_norm, bairro_like = cls._preparar_filtro_bairro(bairro_limpo)
 
-        query_cat = """
+        query_cat = f"""
             SELECT
                 NVL(cat.nm_categoria, 'Geral') AS categoria,
                 COUNT(DISTINCT c.id_chamado) AS total
@@ -277,18 +331,18 @@ class OracleClient:
             LEFT JOIN categoria cat ON c.categoria_id_categoria = cat.id_categoria
             LEFT JOIN endereco e ON c.endereco_id_endereco = e.id_endereco
             LEFT JOIN bairro b ON e.bairro_id_bairro = b.id_bairro
-            WHERE (:bairro IS NULL OR LOWER(b.nm_bairro) LIKE LOWER(:bairro_like))
+            WHERE (:bairro_norm IS NULL OR {cls._SQL_BAIRRO_NORM} LIKE :bairro_like)
             GROUP BY NVL(cat.nm_categoria, 'Geral')
             ORDER BY total DESC
             FETCH FIRST 10 ROWS ONLY
         """
-        query_votos = """
+        query_votos = f"""
             SELECT COUNT(1)
             FROM voto_chamado v
             JOIN chamado c ON v.chamado_id_chamado = c.id_chamado
             LEFT JOIN endereco e ON c.endereco_id_endereco = e.id_endereco
             LEFT JOIN bairro b ON e.bairro_id_bairro = b.id_bairro
-            WHERE (:bairro IS NULL OR LOWER(b.nm_bairro) LIKE LOWER(:bairro_like))
+            WHERE (:bairro_norm IS NULL OR {cls._SQL_BAIRRO_NORM} LIKE :bairro_like)
         """
 
         por_categoria: Dict[str, int] = {}
@@ -296,13 +350,13 @@ class OracleClient:
         total_votos = 0
         try:
             with conn.cursor() as cursor:
-                cursor.execute(query_cat, bairro=bairro_limpo, bairro_like=bairro_like)
+                cursor.execute(query_cat, bairro_norm=bairro_norm, bairro_like=bairro_like)
                 for cat, total in cursor.fetchall():
                     qtd = int(total or 0)
                     por_categoria[cat] = qtd
                     total_chamados += qtd
 
-                cursor.execute(query_votos, bairro=bairro_limpo, bairro_like=bairro_like)
+                cursor.execute(query_votos, bairro_norm=bairro_norm, bairro_like=bairro_like)
                 row_v = cursor.fetchone()
                 total_votos = int(row_v[0] or 0) if row_v else 0
 

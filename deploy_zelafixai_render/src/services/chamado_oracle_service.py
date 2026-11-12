@@ -7,26 +7,34 @@ import logging
 from typing import Optional, Dict, Any, Tuple
 from src.database.oracle_client import OracleClient
 from src.schemas.chamado import ChamadoContextPayload
+from src.services.viacep_client import ViaCepClient
 from src.utils.text import normalizar_texto
 
 logger = logging.getLogger("ZelaFixAI.ChamadoOracleService")
 
 _PADRAO_CHAMADO_ID = re.compile(
-    r"(?:chamado|ocorr[eê]ncia|protocolo)\s*(?:d[eo]\s*)?(?:n[úu]mero|num\.?|n[ºo°]\.?|id|#)?\s*(\d+)",
+    r"(?:chamado|ocorr[eê]ncia|protocolo)\s*(?:d[eo]\s*)?(?:n[úu]mero|num\.?|n[ºo°]\.?|id|#)?\s*(\d+)|(?<!\S)#(\d+)\b",
     re.IGNORECASE
 )
+_PADRAO_CEP = re.compile(r"\b(\d{5}-?\d{3})\b")
 _PADRAO_LISTAGEM = re.compile(
-    r"\b(?:quais|liste|listar|mostr[ae]|ver|existe[m]?|tem|ultim[oa]s?|recentes?|abert[oa]s?)\b.*\b(?:chamados?|ocorrencias?)\b"
-    r"|\b(?:chamados?|ocorrencias?)\b.*\b(?:abert[oa]s?|recentes?|bairro|regiao)\b",
+    r"\b(?:quais|liste|listar|mostr[ae]|mostrar|ver|existe[m]?|tem|ultim[oa]s?|recentes?|abert[oa]s?)\b.*\b(?:chamados?|ocorrencias?|problemas?|buracos?|queixas?)\b"
+    r"|\b(?:chamados?|ocorrencias?)\b.*\b(?:abert[oa]s?|recentes?|bairro|regiao|cep|\d{5}-?\d{3}|(?:em|no|na|do|da)\s+[a-z])",
     re.IGNORECASE
 )
-_BAIRROS_CONHECIDOS = ["bela vista", "pinheiros", "se", "sé", "mooca", "santana"]
+_STOPWORDS_LOCAL = {
+    "aberto", "abertos", "aberta", "abertas", "recente", "recentes",
+    "sistema", "oracle", "zelafix", "app", "aplicativo", "sao paulo", "sp",
+    "cidade", "geral", "rua", "avenida", "cep", "chamado", "chamados",
+    "ocorrencia", "ocorrencias", "problema", "problemas", "buraco", "buracos",
+    "hoje", "agora", "plataforma", "banco", "dados"
+}
 
 
 class ChamadoOracleService:
     """
     Identifica consultas a chamados ou listagens urbanas e enriquece o contexto
-    do ZelaBot usando exclusivamente leitura (SELECT) no Oracle FIAP.
+    do ZelaBot usando exclusivamente leitura (SELECT) no Oracle FIAP + ViaCEP.
     """
 
     @classmethod
@@ -36,29 +44,54 @@ class ChamadoOracleService:
             return None
         match = _PADRAO_CHAMADO_ID.search(pergunta)
         if match:
+            bruto = match.group(1) or match.group(2)
             try:
-                return int(match.group(1))
+                return int(bruto) if bruto else None
             except ValueError:
                 return None
         return None
 
     @classmethod
     def extrair_bairro_listagem(cls, pergunta: str) -> Optional[str]:
-        """Detecta se a pergunta solicita listagem de chamados e eventual bairro citado."""
+        """
+        Detecta se a pergunta solicita listagem de chamados e resolve eventual
+        bairro citado via CEP (ViaCEP), catálogo dinâmico do Oracle ou regex flexível.
+        """
         if not pergunta:
             return None
         norm = normalizar_texto(pergunta)
         if not _PADRAO_LISTAGEM.search(norm):
             return None
-        for b in _BAIRROS_CONHECIDOS:
-            if re.search(rf"\b{re.escape(normalizar_texto(b))}\b", norm):
-                return b if b != "se" else "Sé"
-        # Padrão genérico "em/no/na <Bairro>" com inicial maiúscula na pergunta original
-        m_bairro = re.search(r"\b(?:em|no|na)\s+([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)?)", pergunta)
-        if m_bairro:
-            candidato = m_bairro.group(1).strip()
-            if candidato.lower() not in {"sao paulo", "sp", "aberto", "abertos", "oracle", "sistema"}:
+
+        # 1. CEP explícito na pergunta -> resolve bairro real via ViaCEP (como no Java)
+        m_cep = _PADRAO_CEP.search(pergunta)
+        if m_cep:
+            dados_cep = ViaCepClient.consultar_cep(m_cep.group(1))
+            if dados_cep and dados_cep.get("bairro"):
+                return dados_cep["bairro"]
+
+        # 2. Catálogo dinâmico cacheado da tabela BAIRRO do Oracle (sem lista fixa)
+        bairros_oracle = sorted(
+            OracleClient.listar_bairros_cadastrados(),
+            key=lambda b: len(b),
+            reverse=True,
+        )
+        for bairro_real in bairros_oracle:
+            bairro_norm = normalizar_texto(bairro_real)
+            if bairro_norm and re.search(rf"\b{re.escape(bairro_norm)}\b", norm):
+                return bairro_real
+
+        # 3. Extração flexível (aceita minúsculas, sem acento e preposições como 'Freguesia do Ó')
+        for m_bairro in re.finditer(
+            r"\b(?:bairro|em|no|na|do|da|dos|das)\s+([A-Za-zÀ-Úà-ú0-9]+(?:\s+(?:d[eao]s?\s+)?[A-Za-zÀ-Úà-ú0-9]+){0,3})",
+            pergunta,
+            re.IGNORECASE,
+        ):
+            candidato = re.sub(r"\b(?:hoje|agora|por favor|sao paulo|sp)\b.*$", "", m_bairro.group(1), flags=re.IGNORECASE).strip(" ,.?!;:")
+            cand_norm = normalizar_texto(candidato)
+            if cand_norm and cand_norm not in _STOPWORDS_LOCAL and not cand_norm.isdigit():
                 return candidato
+
         return "__TODOS__"
 
     @classmethod

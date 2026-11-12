@@ -10,6 +10,7 @@ from src.core.prompts import formatar_prompt_triagem
 from src.schemas.insights import TriagemRequest, TriagemResponse
 from src.services.knowledge_service import KnowledgeService
 from src.services.groq_service import GroqService
+from src.services.viacep_client import ViaCepClient
 from src.database.oracle_client import OracleClient
 from src.repositories.chat_repository import ChatRepository
 from src.utils.guardrails import sanitizar_lgpd
@@ -43,11 +44,14 @@ class TriagemService:
             "alta tensao", "choque", "faisca", "fogo", "cratera", "alagamento", "desabamento", "soterramento"
         ])
 
-        eh_vazamento_agua = any(k in cat_norm for k in ["agua", "saneamento", "sabesp", "vazamento"]) or any(
-            k in texto_norm for k in [
-                "vazamento de agua", "adutora", "cano quebrado", "cano rompido",
-                "cano estourado", "esgoto a ceu aberto", "sabesp", "cavalete", "agua jorrando"
-            ]
+        eh_vazamento_agua = any(k in cat_norm for k in ["agua", "saneamento", "sabesp", "vazamento"]) or (
+            any(
+                k in texto_norm for k in [
+                    "vazamento de agua", "adutora", "cano quebrado", "cano rompido",
+                    "cano estourado", "esgoto a ceu aberto", "sabesp", "cavalete", "agua jorrando"
+                ]
+            )
+            and "agua da chuva" not in texto_norm
         )
         eh_drenagem = (
             "drenagem" in cat_norm
@@ -66,7 +70,8 @@ class TriagemService:
         eh_iluminacao = any(k in cat_norm for k in ["iluminacao", "poste", "luz"]) or any(
             k in texto_norm for k in [
                 "poste apagado", "lampada queimada", "ponto escuro",
-                "luminaria led", "escuridao", "ilumina sp"
+                "luminaria led", "escuridao", "ilumina sp", "sem luz", "luz piscando",
+                "rua escura", "praca escura"
             ]
         )
         eh_arvore = any(k in cat_norm for k in ["arvore", "poda", "arboreo", "parque"]) or any(
@@ -82,10 +87,16 @@ class TriagemService:
             ]
         )
         eh_calcada = any(k in cat_norm for k in ["calcada", "acessibilidade"]) or any(
-            k in texto_norm for k in ["calcada quebrada", "piso tatil", "rampa acessibilidade", "degrau calcada"]
+            k in texto_norm for k in [
+                "calcada quebrada", "buraco na calcada", "calcada com buraco",
+                "calcada afundando", "calcada irregular", "piso tatil",
+                "rampa acessibilidade", "degrau calcada"
+            ]
         )
-        eh_pavimentacao = any(k in cat_norm for k in ["buraco", "paviment", "asfalto", "via"]) or any(
-            k in texto_norm for k in ["buraco", "cratera", "tapa buraco", "recapeamento", "asfalto"]
+        eh_pavimentacao = (not eh_calcada) and (
+            any(k in cat_norm for k in ["buraco", "paviment", "asfalto", "via"]) or any(
+                k in texto_norm for k in ["buraco", "cratera", "tapa buraco", "recapeamento", "asfalto"]
+            )
         )
 
         # Drenagem tem prioridade sobre menção genérica a "esgoto" na categoria Oracle "Drenagem e Esgoto"
@@ -264,6 +275,13 @@ class TriagemService:
                 if apoios == 0 and dados_oracle.get("apoios_comunitarios"):
                     apoios = dados_oracle["apoios_comunitarios"]
 
+            # Enriquecimento por ViaCEP quando CEP vier preenchido sem bairro real (padrão Java)
+            cep_resolvido = chamado.cep or (dados_oracle.get("cep") if dados_oracle else None)
+            if (bairro_raw == "São Paulo - SP" or not bairro_raw) and cep_resolvido:
+                dados_cep = ViaCepClient.consultar_cep(cep_resolvido)
+                if dados_cep and dados_cep.get("bairro"):
+                    bairro_raw = sanitizar_lgpd(dados_cep["bairro"])
+
             # Telemetria IoT real (quando presente)
             telemetria = chamado.telemetria_iot
             anomalia_iot = bool(telemetria and telemetria.anomalia_detectada)
@@ -358,7 +376,11 @@ class TriagemService:
 
                 origem_triagem = f"ZelaFix AI Triagem Multimodal (Groq {GROQ_MODEL} + RAG)"
 
-            parecer_ia = (parecer[:147] + "...") if len(parecer) > 150 else parecer
+            if len(parecer) > 150:
+                corte = parecer[:147].rsplit(" ", 1)[0].rstrip(" ,;:-")
+                parecer_ia = f"{corte or parecer[:147]}..."
+            else:
+                parecer_ia = parecer
 
             ChatRepository.salvar_triagem_audit(
                 session_id=session_id,

@@ -43,6 +43,8 @@ MAPA_EXPANSAO_SEMANTICA: Dict[str, List[str]] = {
     "lampada": ["poste", "iluminacao", "queimada", "apagada", "led", "ilumina_sp", "luminaria"],
     "luminaria": ["poste", "iluminacao", "lampada", "led", "ilumina_sp", "fotocelula"],
     "escuro": ["iluminacao", "poste", "lampada", "ponto_escuro", "apagado", "noite", "seguranca"],
+    "escuridao": ["iluminacao", "poste", "lampada", "ponto_escuro", "apagado", "noite", "seguranca"],
+    "sem_luz": ["iluminacao", "poste", "lampada", "apagado", "ponto_escuro", "ilumina_sp"],
     "apagado": ["iluminacao", "poste", "lampada", "queimada", "ponto_escuro", "semaforo"],
     "led": ["iluminacao", "lampada", "luminaria", "ilumina_sp", "modernizacao"],
 
@@ -50,9 +52,12 @@ MAPA_EXPANSAO_SEMANTICA: Dict[str, List[str]] = {
     "bueiro": ["boca_lobo", "alagamento", "enchente", "drenagem", "galeria", "entupido", "tampa"],
     "bueiros": ["boca_lobo", "alagamento", "enchente", "drenagem", "galeria", "entupido", "tampa"],
     "boca_lobo": ["bueiro", "alagamento", "enchente", "drenagem", "hidrojateamento", "entupido"],
+    "boca_de_lobo": ["bueiro", "boca_lobo", "alagamento", "enchente", "drenagem", "entupido"],
     "alagamento": ["enchente", "bueiro", "boca_lobo", "drenagem", "chuva", "inundacao", "risco"],
+    "alagado": ["alagamento", "enchente", "bueiro", "drenagem", "chuva", "inundacao"],
     "enchente": ["alagamento", "bueiro", "drenagem", "chuva", "defesa_civil", "inundacao"],
     "entupido": ["bueiro", "boca_lobo", "desobstrucao", "hidrojateamento", "limpeza", "sedimentos"],
+    "entupida": ["bueiro", "boca_lobo", "desobstrucao", "hidrojateamento", "limpeza", "sedimentos"],
     "tampa": ["bueiro", "boca_lobo", "quebrada", "furtada", "ferro_fundido", "risco", "queda"],
 
     # Limpeza Urbana, Resíduos e Ecopontos
@@ -63,11 +68,13 @@ MAPA_EXPANSAO_SEMANTICA: Dict[str, List[str]] = {
     "descarte": ["lixo", "entulho", "ecoponto", "clandestino", "multa", "irregular", "cata_bagulho"],
     "cata_bagulho": ["moveis", "colchao", "eletrodomesticos", "subprefeitura", "calendario", "coleta"],
     "terreno": ["baldio", "lixo", "dengue", "mato", "notificacao", "fiscalizacao", "proprietario"],
+    "mato": ["terreno", "baldio", "lixo", "dengue", "capinacao", "fiscalizacao", "subprefeitura"],
 
     # Manejo Arbóreo e Vegetação
     "arvore": ["poda", "galho", "queda", "arborizacao", "enel", "fiacao", "raiz", "tombamento"],
     "arvores": ["poda", "galho", "queda", "arborizacao", "enel", "fiacao", "raiz", "tombamento"],
     "poda": ["arvore", "galho", "subprefeitura", "enel", "fiacao", "laudo", "agronomo"],
+    "podar": ["arvore", "poda", "galho", "subprefeitura", "enel", "fiacao", "agronomo"],
     "galho": ["arvore", "poda", "fiacao", "eletrica", "enel", "queda", "risco"],
     "galhos": ["arvore", "poda", "fiacao", "eletrica", "enel", "queda", "risco"],
     "tombamento": ["arvore", "queda", "defesa_civil", "bombeiros", "risco", "tronco"],

@@ -5,13 +5,14 @@ Global Solution 2 — Disruptive Architectures: IoT, IoB & Generative IA (FIAP 2
 Suporta processamento multimodal (texto e visão computacional de fotos urbanas).
 """
 import io
+import os
 import re
 import json
 import base64
 import logging
 from typing import Optional, List, Dict, Any, Union
 from groq import Groq
-from src.core.config import GROQ_MODEL, GROQ_API_KEY, GROQ_BASE_URL, GROQ_TIMEOUT_SECONDS
+import src.core.config as cfg_module
 from src.core.prompts import SYSTEM_INSTRUCTION
 from src.schemas.chat import MensagemHistorico
 
@@ -37,23 +38,26 @@ class GroqService:
 
     MAX_HISTORICO_TURNOS = 6
     _client: Optional[Groq] = None
+    _client_api_key: Optional[str] = None
 
     @classmethod
     def _obter_cliente(cls) -> Optional[Groq]:
         """Obtém ou instancia o cliente Groq reutilizável com base_url normalizada e timeout."""
-        if not GROQ_API_KEY:
+        api_key = (os.environ.get("GROQ_API_KEY") or cfg_module.GROQ_API_KEY or "").strip()
+        if not api_key:
             return None
-        if cls._client is None:
+        if cls._client is None or cls._client_api_key != api_key:
             # O SDK oficial Groq acrescenta '/openai/v1/*' automaticamente; evita duplicação se .env trouxer '/openai/v1'
-            base_url = (GROQ_BASE_URL or "https://api.groq.com").strip().rstrip("/")
+            base_url = (os.environ.get("GROQ_BASE_URL") or cfg_module.GROQ_BASE_URL or "https://api.groq.com").strip().rstrip("/")
             if base_url.endswith("/openai/v1"):
                 base_url = base_url[: -len("/openai/v1")]
             cls._client = Groq(
-                api_key=GROQ_API_KEY,
+                api_key=api_key,
                 base_url=base_url or "https://api.groq.com",
-                timeout=GROQ_TIMEOUT_SECONDS,
+                timeout=cfg_module.GROQ_TIMEOUT_SECONDS,
                 max_retries=1,
             )
+            cls._client_api_key = api_key
         return cls._client
 
     @classmethod
@@ -159,7 +163,7 @@ class GroqService:
         try:
             messages = cls.formatar_mensagens(prompt_atual, historico, imagem_base64)
             completion = client.chat.completions.create(
-                model=GROQ_MODEL,
+                model=cfg_module.GROQ_MODEL,
                 messages=messages,
                 temperature=0.5,
                 max_tokens=800
@@ -169,7 +173,7 @@ class GroqService:
                 return limpo or None
             return None
         except Exception as e:
-            logger.warning(f"Falha na inferência Groq ({GROQ_MODEL}): {e}")
+            logger.warning(f"Falha na inferência Groq ({cfg_module.GROQ_MODEL}): {e}")
             return None
 
     @classmethod
@@ -194,7 +198,7 @@ class GroqService:
                 system_prompt=system_prompt or SYSTEM_TRIAGEM_JSON,
             )
             completion = client.chat.completions.create(
-                model=GROQ_MODEL,
+                model=cfg_module.GROQ_MODEL,
                 messages=messages,
                 temperature=0.2,
                 max_tokens=500,
@@ -206,8 +210,14 @@ class GroqService:
                 return None
             # Remove eventuais cercas ```json ... ```
             limpo = re.sub(r"^```(?:json)?\s*|\s*```$", "", limpo, flags=re.IGNORECASE).strip()
-            dados = json.loads(limpo)
+            try:
+                dados = json.loads(limpo)
+            except json.JSONDecodeError:
+                inicio, fim = limpo.find("{"), limpo.rfind("}")
+                if inicio == -1 or fim <= inicio:
+                    return None
+                dados = json.loads(limpo[inicio : fim + 1])
             return dados if isinstance(dados, dict) else None
         except Exception as e:
-            logger.warning(f"Falha na inferência JSON Groq ({GROQ_MODEL}): {e}")
+            logger.warning(f"Falha na inferência JSON Groq ({cfg_module.GROQ_MODEL}): {e}")
             return None
