@@ -15,6 +15,28 @@ class ChatRepository:
     """
 
     @staticmethod
+    def salvar_mensagem(
+        session_id: str,
+        sender: str,
+        text: str,
+        chamado_id: Optional[int] = None
+    ) -> bool:
+        """
+        Salva uma única mensagem (user ou model) no histórico do SQLite.
+        """
+        try:
+            with get_db_connection() as conn:
+                conn.execute(
+                    "INSERT INTO mensagens_chat (session_id, chamado_id, sender, text) VALUES (?, ?, ?, ?)",
+                    (session_id, chamado_id, sender, text)
+                )
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Erro ao salvar mensagem no SQLite: {e}")
+            return False
+
+    @staticmethod
     def salvar_interacao(
         session_id: str,
         pergunta: str,

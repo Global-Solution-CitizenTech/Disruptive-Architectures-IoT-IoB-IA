@@ -26,4 +26,5 @@ class ChamadoContextPayload(BaseModel):
     longitude: Optional[float] = Field(default=None, description="Coordenada geográfica de longitude")
     apoios_comunitarios: Optional[int] = Field(default=0, description="Quantidade de confirmações +1 da vizinhança (IoB)")
     foto_url: Optional[str] = Field(default=None, description="URL pública ou caminho da evidência fotográfica")
+    foto_base64: Optional[str] = Field(default=None, description="Foto da ocorrência codificada em Base64 para visão computacional")
     telemetria_iot: Optional[TelemetriaIotPayload] = Field(default=None, description="Telemetria de sensores urbanos de IoT")

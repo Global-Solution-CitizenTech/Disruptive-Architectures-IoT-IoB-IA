@@ -114,3 +114,63 @@ def vector_store_status_endpoint() -> dict:
         "vector_dimensions": LocalSemanticEmbedder.DIMENSAO,
         "distance_metric": "cosine"
     }
+
+@ai_router.get("/oracle/status")
+def oracle_status_endpoint() -> dict:
+    """
+    Retorna o status de conexão em tempo real com o banco de dados Oracle FIAP (Modo Thin nativo).
+    """
+    from src.database.oracle_client import OracleClient
+    return OracleClient.verificar_conexao()
+
+@ai_router.get("/chamados")
+def listar_chamados_oracle_endpoint(
+    limit: int = Query(10, ge=1, le=50, description="Quantidade máxima de chamados"),
+    bairro: Optional[str] = Query(None, description="Filtrar por bairro")
+) -> dict:
+    """
+    Lista os chamados mais recentes cadastrados no banco de dados Oracle da FIAP.
+    """
+    from src.database.oracle_client import OracleClient
+    chamados = OracleClient.listar_chamados_recentes(limit=limit, bairro=bairro)
+    return {
+        "total": len(chamados),
+        "chamados": chamados
+    }
+
+@ai_router.get("/chamados/{id_chamado}")
+def consultar_chamado_oracle_endpoint(id_chamado: int) -> dict:
+    """
+    Consulta os dados reais de um chamado diretamente no banco Oracle da FIAP,
+    incluindo status atual, histórico, endereço, contagem de apoios (+1) e parecer técnico automatizado.
+    """
+    from src.database.oracle_client import OracleClient
+    from src.services.triagem_service import TriagemService
+    from src.schemas.chamado import ChamadoContextPayload
+    from src.schemas.insights import TriagemRequest
+
+    dados = OracleClient.obter_chamado_completo(id_chamado)
+    if not dados:
+        return {
+            "status": "nao_encontrado",
+            "mensagem": f"Chamado de ID {id_chamado} não foi localizado na base Oracle FIAP."
+        }
+
+    payload_chamado = ChamadoContextPayload(
+        id=dados["id"],
+        titulo=dados["titulo"],
+        categoria=dados["categoria"],
+        descricao=dados["descricao"],
+        bairro=dados["bairro"],
+        logradouro=dados["logradouro"],
+        cep=dados["cep"],
+        apoios_comunitarios=dados["apoios_comunitarios"]
+    )
+    triagem = TriagemService.realizar_triagem(TriagemRequest(chamado=payload_chamado))
+    dados_resposta = {k: v for k, v in dados.items() if k != "foto_bytes"}
+
+    return {
+        "status": "sucesso",
+        "chamado": dados_resposta,
+        "parecer_tecnico": triagem.model_dump()
+    }

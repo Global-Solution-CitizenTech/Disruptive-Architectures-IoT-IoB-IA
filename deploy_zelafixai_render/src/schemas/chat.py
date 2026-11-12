@@ -20,6 +20,7 @@ class RetrievedSource(BaseModel):
 class ChatRequest(BaseModel):
     pergunta: str = Field(..., description="Dúvida, relato ou consulta enviada pelo munícipe")
     chamadoContext: Optional[ChamadoContextPayload] = Field(default=None, description="Contexto do chamado ou ocorrência urbana ativa")
+    foto_base64: Optional[str] = Field(default=None, description="Foto da ocorrência em formato Base64 para análise visual multimodal")
     historico: Optional[List[MensagemHistorico]] = Field(default=None, description="Histórico de mensagens recentes para memória conversacional")
     sessionId: Optional[str] = Field(default=None, description="Identificador único da sessão de chat")
 

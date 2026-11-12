@@ -4,7 +4,7 @@ Global Solution 2 — Disruptive Architectures: IoT, IoB & Generative IA (FIAP 2
 """
 from typing import Dict, Any
 from fastapi import APIRouter
-from src.core.config import AI_PROVIDER, GROQ_MODEL, GEMINI_MODEL, APP_TITLE, APP_VERSION
+from src.core.config import AI_PROVIDER, GROQ_MODEL, APP_TITLE, APP_VERSION
 
 health_router = APIRouter(tags=["Health"])
 
@@ -18,7 +18,8 @@ def health_check() -> Dict[str, Any]:
         "status": "healthy",
         "service": APP_TITLE,
         "provider": AI_PROVIDER,
-        "model": f"{GROQ_MODEL if AI_PROVIDER == 'groq' else GEMINI_MODEL} / Semantic Knowledge Engine",
+        "model": f"{GROQ_MODEL} (Groq Cloud Multimodal) + Resilient Local Semantic Engine",
+        "database_oracle": "Oracle Thin Client (FIAP)",
         "framework": "FastAPI + Clean Mobile Pipeline",
         "version": APP_VERSION
     }

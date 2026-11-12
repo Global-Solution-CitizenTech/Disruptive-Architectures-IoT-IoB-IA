@@ -11,7 +11,7 @@ from src.schemas.chamado import ChamadoContextPayload
 from src.schemas.insights import TriagemRequest, TriagemResponse
 from src.services.knowledge_service import KnowledgeService
 from src.services.groq_service import GroqService
-from src.services.gemini_service import GeminiService
+from src.database.oracle_client import OracleClient
 from src.repositories.chat_repository import ChatRepository
 from src.utils.guardrails import detectar_emergencia_vital
 from src.utils.text import normalizar_texto
@@ -33,11 +33,31 @@ class TriagemService:
         session_id = request.sessionId or f"tria_{uuid.uuid4().hex[:12]}"
 
         try:
+            dados_oracle = None
+            if chamado.id:
+                try:
+                    dados_oracle = OracleClient.obter_chamado_completo(chamado.id)
+                except Exception as err_ora:
+                    logger.warning(f"Consulta ao Oracle para chamado {chamado.id} falhou: {err_ora}")
+
             categoria_raw = chamado.categoria or "Geral"
             titulo_raw = chamado.titulo or "Relato de Zeladoria"
             descricao_raw = chamado.descricao or ""
             bairro_raw = chamado.bairro or "São Paulo - SP"
             apoios = max(0, chamado.apoios_comunitarios or 0)
+
+            # Enriquecimento com dados reais do Oracle se disponíveis
+            if dados_oracle:
+                if (categoria_raw == "Geral" or not categoria_raw) and dados_oracle.get("categoria"):
+                    categoria_raw = dados_oracle["categoria"]
+                if (titulo_raw == "Relato de Zeladoria" or not titulo_raw) and dados_oracle.get("titulo"):
+                    titulo_raw = dados_oracle["titulo"]
+                if not descricao_raw and dados_oracle.get("descricao"):
+                    descricao_raw = dados_oracle["descricao"]
+                if (bairro_raw == "São Paulo - SP" or not bairro_raw) and dados_oracle.get("bairro"):
+                    bairro_raw = dados_oracle["bairro"]
+                if apoios == 0 and dados_oracle.get("apoios_comunitarios"):
+                    apoios = dados_oracle["apoios_comunitarios"]
 
             texto_completo = f"{categoria_raw} {titulo_raw} {descricao_raw}".strip()
             texto_norm = normalizar_texto(texto_completo)
@@ -185,6 +205,24 @@ class TriagemService:
                 if "Decreto" in primeiro_chunk.get("source", "") or "Lei" in primeiro_chunk.get("source", ""):
                     enquadramento = f"{primeiro_chunk['source']} — {primeiro_chunk['title']}"
 
+            # Análise visual multimodal via Qwen 3.8 27B caso haja foto fornecida ou persistida
+            foto_input = chamado.foto_base64
+            if not foto_input and dados_oracle and dados_oracle.get("foto_bytes"):
+                foto_input = dados_oracle["foto_bytes"]
+
+            analise_visual = None
+            if foto_input:
+                try:
+                    prompt_visao = (
+                        f"Você é o ZelaFix AI, especialista em engenharia e zeladoria urbana da PMSP. "
+                        f"Analise esta fotografia do defeito urbano '{titulo_raw}' ({categoria_raw}) no bairro {bairro_raw}. "
+                        f"Descreva em até duas frases objetivas o dano físico identificado, "
+                        f"sua aparente severidade e o risco estrutural imediato."
+                    )
+                    analise_visual = GroqService.gerar_resposta(prompt_atual=prompt_visao, imagem_base64=foto_input)
+                except Exception as err_v:
+                    logger.warning(f"Erro na análise visual da triagem: {err_v}")
+
             # Assegura limite estrito de 150 caracteres no parecer para persistência
             parecer_ia = (parecer[:147] + "...") if len(parecer) > 150 else parecer
 
@@ -210,6 +248,7 @@ class TriagemService:
                 enquadramento_legal=enquadramento,
                 risco_potencial=risco,
                 checklist_vistoria=checklist,
+                analise_visual=analise_visual,
                 origem_triagem="ZelaFix AI Triagem Multimodal + RAG"
             )
         except Exception as e:
