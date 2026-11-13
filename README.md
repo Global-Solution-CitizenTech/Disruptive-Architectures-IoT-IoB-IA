@@ -1,6 +1,6 @@
 # 🏛️ ZelaFix AI — Copiloto Inteligente de Triagem Urbana, RAG Normativo Municipal & IoT/IoB
 
-> **FIAP Global Solution 2026/2 — Disruptive Architectures: IoT, IoB & Generative IA (Págs 54–60 do Edital)**  
+> **FIAP Global Solution 2026/2 — Disruptive Architectures: IoT, IoB & Generative IA**  
 > **Turma:** 2TDSPG | **Semestre:** 2º Semestre / 2026  
 > **Tema Central:** CitizenTech — Tecnologia com o Cidadão no Centro da Inovação  
 > **Alinhamento Estratégico ONU:** ODS 11 — Cidades e Comunidades Sustentáveis (Metas 11.2, 11.3, 11.7 e 11.b)  
@@ -30,7 +30,7 @@
 
 ---
 
-## 🎯 3. Definição do Problema de Negócio & Proposta de Valor CitizenTech (Critério 01 — 10 pts)
+## 🎯 3. Definição do Problema de Negócio & Proposta de Valor CitizenTech
 
 ### O Desafio Crítico da Zeladoria Urbana na Metrópole Paulistana
 Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais telefônicas 156 e formulários estáticos municipais) enfrentam gargalos crônicos que prejudicam a qualidade de vida do munícipe e sobrecarregam o poder público:
@@ -78,7 +78,7 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 
 ---
 
-## 🏛️ 4. Arquitetura da Solução & Diagrama de Fluxo Manual (Critérios 02, 03 e 04 — 65 pts)
+## 🏛️ 4. Arquitetura da Solução & Diagrama de Fluxo Manual
 
 ```text
 ====================================================================================================
@@ -168,7 +168,7 @@ A arquitetura do **ZelaFix AI** resolve esse dilema através da integração de 
 
 ---
 
-## 🔬 6. Embeddings Vetoriais Locais (512D), Cosine Similarity e Otimização para o Render (Critério 04 — 15 pts)
+## 🔬 6. Embeddings Vetoriais Locais (512D), Cosine Similarity e Otimização para o Render
 
 ### Por que Desenvolver o `LocalSemanticEmbedder`?
 Em ambientes de nuvem restritos (plano gratuito do Render com teto rigoroso de **512 MB de RAM**), a utilização de frameworks tradicionais como PyTorch (`torch`), TensorFlow ou `sentence-transformers` aloca entre 800 MB e 1.4 GB de memória RAM logo na importação de pesos neurais. Isso desencadeia imediatamente o encerramento do processo pelo Linux OOM-Killer (`SIGKILL: Out of Memory`).
@@ -339,7 +339,7 @@ O microsserviço implementa camadas ativas de conformidade e tratamento de dados
 
 ---
 
-## 🧪 10. Avaliação Empírica e Testes Automatizados (Critério 05 — 15 pts)
+## 🧪 10. Avaliação Empírica e Testes Automatizados
 
 A confiabilidade do microsserviço é assegurada por **três suítes de testes automatizados**, totalizando **82 casos de validação executáveis com 100% de sucesso comprovado**:
 
@@ -392,7 +392,7 @@ Submeteu a aplicação a condições extremas e cenários destrutivos:
 
 ---
 
-## 🏛️ 11. Governança Ética, LGPD e Limitações Transparentes da IA (Critério 06 — 10 pts)
+## 🏛️ 11. Governança Ética, LGPD e Limitações Transparentes da IA
 
 ### 11.1 Proteção de Dados Pessoais (LGPD) e Credenciais
 - Nenhuma chave de API ou credencial Oracle está versionada no repositório. O arquivo [`.env.example`](./deploy_zelafixai_render/.env.example) contém apenas os nomes das variáveis modelo.
@@ -516,21 +516,3 @@ python run_qa_demo.py --delay 2
 python test_knowledge_coverage.py
 python stress_test_zelafix.py
 ```
-
----
-
-## 📋 14. Mapeamento com a Rubrica de Avaliação (Págs 54–60 do Edital)
-
-| Critério | Descrição no Edital | Pontos | Como o ZelaFix AI Atende Integralmente |
-| :---: | :--- | :---: | :--- |
-| **01** | **Adequação da funcionalidade ao problema e ao cidadão beneficiado** | **10 pts** | Solução focada em CitizenTech e ODS 11, resolvendo triagem urbana, despacho competente e transparência de protocolos em São Paulo. |
-| **02** | **IA Generativa funcionando e integrada à solução** | **25 pts** | Groq Cloud (`qwen/qwen3.8-27b`) com **Tool Calling** (`consultar_chamados_oracle`), visão multimodal e fallback heurístico local, integrado ao App Mobile e Backend Java. |
-| **03** | **Aprofundamento técnico e justificativa sólida** | **25 pts** | **RAG Normativo PMSP** (ChromaDB + 8 módulos / 31 chunks) aliado a **Visão Computacional**, com justificativas de domínio jurídico e memória (< 45 MB RAM). |
-| **04** | **Pipeline de dados e documentação da arquitetura** | **15 pts** | `LocalSemanticEmbedder` (512D), busca HNSW por cosseno, re-ranking híbrido, Oracle Modo Thin (somente `SELECT`), SQLite WAL e diagrama ASCII completo. |
-| **05** | **Testes, avaliação empírica e interpretação de resultados** | **15 pts** | **82 testes automatizados** (`37` RAG + `12` cenários + `33` estresse/segurança) com análise crítica de precisão e resiliência sob `429 Rate Limit`. |
-| **06** | **Código organizado, reprodução e governança/LGPD** | **10 pts** | Estrutura modular, zero credenciais no Git, mascaramento LGPD na entrada/saída, acesso Oracle `SELECT` e limitações documentadas. |
-| **TOTAL** | **Pontuação Total da Entrega** | **100 pts** | **100% dos requisitos técnicos do edital atendidos.** |
-
----
-
-> **ZelaFix AI** — Transformando a zeladoria urbana com Inteligência Artificial Generativa, rigor normativo e o cidadão no centro da inovação municipal. 🏛️🌱
