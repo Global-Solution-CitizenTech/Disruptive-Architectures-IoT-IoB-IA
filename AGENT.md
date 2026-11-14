@@ -3,20 +3,20 @@
 > **Projeto:** ZelaFix AI — Copiloto Inteligente de Triagem Urbana, Visão Computacional & Zeladoria Municipal  
 > **Disciplina:** Disruptive Architectures: IoT, IoB & Generative IA (FIAP — 2TDSPG)  
 > **Núcleo de Produção:** Microsserviço FastAPI em Produção no Render ([`deploy_zelafixai_render`](./deploy_zelafixai_render))  
-> **Banco de Dados Oficial:** Oracle Database FIAP (`oracle.fiap.com.br:1521/orcl` — Modo Thin)  
-> **Status:** Concluído, homologado e 100% operacional  
+> **Banco de Dados Oficial:** Oracle Database FIAP (`oracle.fiap.com.br:1521/orcl` — Modo Thin, somente leitura `SELECT`)  
+> **Provedor de IA:** Azure AI Foundry (`ai-zelafix-e2-561432` — `phi-4-multimodal` + `embed-v-4-0`)  
 
 ---
 
 ## 🎯 1. Visão Geral & Propósito do Agente
 
-O **ZelaFix AI** é o motor de inteligência artificial generativa multimodal e inteligência comportamental (IoB) da plataforma CitizenTech **ZelaFix**. Desenvolvido com foco no **ODS 11 da ONU (Cidades e Comunidades Sustentáveis)**, o agente atua na linha de frente entre os munícipes da Cidade de São Paulo e o poder público:
+O **ZelaFix AI** é o motor de inteligência artificial generativa multimodal e inteligência comportamental (IoB) da plataforma CitizenTech **ZelaFix**. Desenvolvido com foco no **ODS 11 da ONU (Cidades e Comunidades Sustentáveis)**, o agente atua entre os munícipes da Cidade de São Paulo e os órgãos públicos municipais:
 
-1. **Atendimento Cívico Especializado (ZelaBot):** Orienta munícipes sobre direitos, deveres, prazos regulamentares (SLAs) e procedimentos municipais com embasamento estrito na legislação de São Paulo.
-2. **Visão Computacional Multimodal (Groq Qwen 3.8 27B):** Analisa fotografias enviadas pelos cidadãos, identificando o tipo de dano na infraestrutura (buracos, asfalto cedido, semáforos quebrados, bocas de lobo obstruídas, fios rompidos) e emitindo parecer técnico objetivo.
-3. **Triagem Automática e Enquadramento Normativo:** Classifica a urgência da ocorrência (`BAIXA`, `MEDIA`, `ALTA`, `URGENTE`), identifica a secretaria competente (Subprefeitura, CET, Ilumina SP, Sabesp, AMLURB, ENEL, Defesa Civil) e gera checklist técnico de vistoria presencial.
-4. **Internet of Behaviors (IoB):** Incorpora o engajamento coletivo através dos apoios comunitários (+1 dos vizinhos) para reescalonar a prioridade na fila de atendimento da prefeitura.
-5. **Integração Real-Time com Banco Oracle FIAP:** Consulta ocorrências diretamente na base relacional oficial da solução via driver Python Thin sem dependência de binários externos, garantindo compatibilidade total com contêineres cloud Linux.
+1. **Atendimento Cívico Especializado (ZelaBot):** Orienta munícipes sobre direitos, prazos regulamentares (SLAs) e procedimentos municipais fundamentados na legislação paulistana via RAG semântico em nuvem (`embed-v-4-0`, 1536D).
+2. **Visão Computacional Multimodal (Azure AI Foundry `phi-4-multimodal`):** Analisa fotografias enviadas pelos cidadãos (ou recuperadas do Oracle sob demanda), identificando danos urbanos e emitindo parecer técnico em formato estruturado (Pydantic JSON).
+3. **Triagem Automática e Enquadramento Normativo:** Classifica prioridade (`BAIXA`, `MEDIA`, `ALTA`, `URGENTE`), órgão responsável, SLA regulamentar, enquadramento legal e checklist técnico de vistoria via Structured Outputs — sem matrizes rígidas de palavras-chave manuais.
+4. **Internet of Behaviors (IoB) & IoT:** Incorpora confirmações comunitárias (`+1` >= 25 apoios) e anomalias de sensores urbanos para elevar automaticamente a prioridade mínima da ocorrência para `ALTA` / `URGENTE`.
+5. **Integração Somente Leitura com Oracle FIAP:** Consulta chamados, histórico, votos e resumo de bairros via `oracledb` em Modo Thin (`SELECT` estrito) tanto por *fast-path* (`#ID`) quanto via **Tool Calling** nativo (`consultar_chamados_oracle`, `calcular_prazo_sla`).
 
 ---
 
@@ -27,50 +27,38 @@ O **ZelaFix AI** é o motor de inteligência artificial generativa multimodal e 
  │                   📱 APLICATIVO MOBILE (REACT NATIVE)                  │
  │      Foto do dano urbano + Relato cívico + Localização + Votos (+1)    │
  └───────────────────────────────────┬────────────────────────────────────┘
-                                     │ POST /ai/chat ou POST /ai/triagem
+                                     │ POST /ai/chat | /ai/triagem | /ai/insights
                                      ▼
  ┌────────────────────────────────────────────────────────────────────────┐
  │                ⚡ FASTAPI CONTROLLER (ROUTER /AI)                      │
  │  1. Validação de Schema Pydantic (ChatRequest / TriagemRequest)        │
- │  2. Proteção LGPD (Anonimização de CPF e dados pessoais)              │
+ │  2. Proteção LGPD na entrada (mascaramento de CPF e cartão)            │
  └───────────────────┬───────────────────────────────┬────────────────────┘
                      │                               │
-       (Se menciona chamado #ID)                     ▼
+    (Tool Call / Fast-Path #ID)                      ▼
                      │            ┌───────────────────────────────────────┐
-                     ▼            │ 🔍 RECUPERAÇÃO RAG & BANCO VETORIAL   │
- ┌─────────────────────────────┐  │  • ChromaDB (HNSW Cosine Metric)      │
- │  🏛️ ORACLE FIAP (MODO THIN) │  │  • LocalSemanticEmbedder (R^512)      │
- │  • Título e Descrição       │  │  • 31 Chunks Decretos PMSP (Top-K)    │
- │  • Status Atual e Histórico │  │  • Score de corte: RAG_MIN_SCORE 0.18 │
- │  • Total de Apoios (+1 IoB) │  └──────────────────┬────────────────────┘
- │  • BLOB de Foto do Chamado  │                     │
- └─────────────┬───────────────┘                     ▼
-               │                  ┌───────────────────────────────────────┐
-               └─────────────────►│ 📝 MONTAGEM DO PROMPT FUNDAMENTADO    │
-                                  │  • System Prompt ZelaFix              │
-                                  │  • Contexto real do Oracle / DTO      │
-                                  │  • Chunks legislativos PMSP           │
-                                  └──────────────────┬────────────────────┘
-                                                     │
-                                                     ▼
+                     ▼            │ 🔍 RAG SEMÂNTICO EM NUVEM (CHROMA DB) │
+ ┌─────────────────────────────┐  │  • Embeddings: embed-v-4-0 (1536D)    │
+ │  🏛️ ORACLE FIAP (MODO THIN) │  │  • ChromaDB Persistente (HNSW Cosine) │
+ │  • Somente leitura (SELECT) │  │  • Fingerprint SHA-256 (0 reindexação │
+ │  • Protocolo, Status, Votos │  │    desnecessária entre restarts)      │
+ │  • BLOB de Foto sob demanda │  │  • 31 Chunks Decretos PMSP (Top-K)    │
+ └─────────────┬───────────────┘  └──────────────────┬────────────────────┘
+               │                                     │
+               └─────────────────┬───────────────────┘
+                                 ▼
  ┌────────────────────────────────────────────────────────────────────────┐
- │           🚀 INFERÊNCIA MULTIMODAL GROQ CLOUD (QWEN 3.8 27B)           │
- │  • Visão Computacional sobre imagem Base64 (defeito físico e risco)    │
- │  • Geração fundamentada citando decretos e leis municipais             │
- │  • Fallback automático: Motor Heurístico Local Resiliente              │
+ │           🚀 AZURE AI FOUNDRY (`openai` SDK /OpenAI v1)                │
+ │  • Modelo Único: phi-4-multimodal (Visão + Tool Calling + JSON)        │
+ │  • Sem fallback para outro modelo LLM                                  │
+ │  • Structured Output validado via Pydantic                             │
  └───────────────────────────────────┬────────────────────────────────────┘
                                      │
                                      ▼
  ┌────────────────────────────────────────────────────────────────────────┐
  │        🧹 HIGIENIZAÇÃO MOBILE CLEAN & AUDITORIA RELACIONAL             │
- │  • Remoção de tabelas markdown brutas (formatação limpa para celular)  │
- │  • Anonimização e proteção de dados (LGPD)                             │
- │  • Persistência em SQLite (mensagens_chat + auditoria_triagens)        │
- └───────────────────────────────────┬────────────────────────────────────┘
-                                     │
-                                     ▼
- ┌────────────────────────────────────────────────────────────────────────┐
- │  Retorno JSON: ChatResponse / TriagemResponse com Parecer e Metadados  │
+ │  • Remoção de markdown/tabelas com pipes (`|`) para tela Mobile        │
+ │  • Mascaramento LGPD na saída + Persistência SQLite (histórico/audit)  │
  └────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -78,7 +66,7 @@ O **ZelaFix AI** é o motor de inteligência artificial generativa multimodal e 
 
 ## 📚 3. Base de Conhecimento RAG: Decretos e Leis da Cidade de São Paulo
 
-A base normativa é composta por **31 chunks atômicos de alta precisão** distribuídos em **8 módulos temáticos**, indexados no ChromaDB com representação vetorial densa de 512 dimensões:
+A base normativa é composta por **31 chunks atômicos** distribuídos em **8 módulos temáticos**, indexados no ChromaDB com vetores densos de **1536 dimensões (`embed-v-4-0`)**:
 
 ```text
 +-----------------------+-----------------------------+---------+------------------------------------------------+
@@ -95,67 +83,15 @@ A base normativa é composta por **31 chunks atômicos de alta precisão** distr
 +-----------------------+-----------------------------+---------+------------------------------------------------+
 ```
 
-### 3.1. Eliminação de Colisão Semântica
-Cada módulo possui vocabulário léxico estrito para evitar falsos positivos cruzados:
-- Água pluvial em bueiro pertence exclusivamente a `drenagem_bueiros.py` (Decreto 57.545/2016).
-- Vazamento de água tratada ou esgoto pertence exclusivamente a `saneamento_sabesp.py` (Sabesp Central 195).
-- Queda de árvore sem fiação compete à Subprefeitura (Lei 17.267/2020); contato com fiação energizada transfere competência para a concessionária ENEL.
+---
+
+## 🗄️ 4. Integração Somente Leitura com Banco Oracle FIAP (Modo Thin)
+
+O microsserviço acessa a base Oracle FIAP com `oracledb` em **Modo Thin (100% Python)**, executando exclusivamente consultas `SELECT` parametrizadas (zero escrita/DDL) com timeout de 3 segundos e suporte a *Tool Calling* (`consultar_chamados_oracle`) e `calcular_prazo_sla`.
 
 ---
 
-## 🗄️ 4. Integração com Banco de Dados Oracle FIAP (Modo Thin)
+## 🛡️ 5. Proteção de Dados (LGPD) & Higienização Mobile Clean
 
-O ZelaFix AI conecta-se diretamente ao cluster oficial de banco de dados Oracle da FIAP através da biblioteca `oracledb` operando em **Modo Thin (100% Python nativo)**.
-
-### Vantagens do Modo Thin em Produção no Render:
-- **Zero Binários Externos:** Não requer instalação do Oracle Instant Client C-libraries (inviáveis no container enxuto do Render).
-- **Timeouts Defensivos:** Conexão TCP com timeout estrito de 3 segundos para proteger a API de travamentos caso haja oscilação na rede acadêmica.
-- **Consultas Parametrizadas:** Blindagem total contra SQL Injection.
-
-### Consultas em Tempo Real Realizadas:
-```text
-+-----------------------------------+----------------------------------------------------------------------------+
-| Operação                          | Dados Extraídos do Oracle                                                  |
-+-----------------------------------+----------------------------------------------------------------------------+
-| Enriquecimento no Chat            | Identifica "chamado nº 2" no texto do munícipe e recupera dados reais     |
-| Consulta de Chamado Específico    | ID, Título, Descrição, Categoria, Endereço, Bairro, Status Atual e Votos   |
-| Contagem de Votos Comunitários    | Apura os registros na tabela VOTO_CHAMADO para cálculo de IoB              |
-| Histórico de Mudanças             | Busca o status mais recente via JOIN em HIST_CHAMADO e STATUS              |
-| Recuperação de Foto BLOB          | Lê o binário da foto gravada na coluna FOTO para inspeção visual Qwen      |
-+-----------------------------------+----------------------------------------------------------------------------+
-```
-
----
-
-## 👁️ 5. Visão Computacional Multimodal (Groq Qwen 3.8 27B)
-
-O ZelaFix AI utiliza o modelo de pesos abertos de última geração **`qwen/qwen3.8-27b`** hospedado na infraestrutura de ultra-baixa latência da Groq Cloud.
-
-### Pipeline de Visão:
-1. **Recepção:** Recebe a foto do dano codificada em Base64 via payload HTTP (`foto_base64`) ou lê o BLOB diretamente da tabela `CHAMADO` do Oracle.
-2. **Sanitização de Imagem:** Valida o cabeçalho base64 e garante dimensões mínimas exigidas pela API da Groq (mínimo de 32x32 pixels, redimensionando defensivamente via Pillow quando necessário).
-3. **Prompt Multimodal Estruturado:** Instrui o Qwen como engenheiro de zeladoria urbana da PMSP a diagnosticar o defeito físico em 1 a 2 frases objetivas, severidade aparente e risco de acidentes.
-4. **Laudo Visual Integrado:** O parecer visual é retornado no campo `analise_visual` da resposta de triagem técnica.
-
----
-
-## 🛡️ 6. Proteção de Dados (LGPD) & Higienização Mobile Clean
-
-1. **Conformidade LGPD:** Mascara automaticamente números de CPF ou documentos pessoais digitados no relato do munícipe antes do envio aos modelos ou persistência no SQLite.
-2. **Higienização Mobile Clean:** Elimina markdown bruto e tabelas de pipes (`| col |`), formatando respostas com marcadores limpos (`•`) para renderização fluida no app React Native.
-
----
-
-## 📊 7. Métricas de Homologação & Testes de Qualidade
-
-```text
-+---------------------------------------------+---------------+------------+
-| Suíte de Validação Oficial                  | Casos / Testes| Resultado  |
-+---------------------------------------------+---------------+------------+
-| Cobertura RAG (test_knowledge_coverage.py)  | 37 cenários   | 100% OK    |
-| Homologação de Ponta a Ponta (run_qa_demo)   | 12 cenários   | 100% OK    |
-| Bateria de Estresse & Carga (stress_test)   | 33 testes     | 100% OK    |
-| Conexão Oracle Thin (oracle.fiap.com.br)    | Somente Leitura| 100% OK   |
-| Fallback Local Heurístico Resiliente        | Contingência  | 100% OK    |
-+---------------------------------------------+---------------+------------+
-```
+1. **Conformidade LGPD:** Mascara automaticamente números de CPF e cartões na entrada e antes de enviar contexto à nuvem ou gravar no SQLite.
+2. **Higienização Mobile Clean:** Remove `**`, `*` e tabelas Markdown (`| col |`), garantindo formatação limpa (`• `) no app React Native.

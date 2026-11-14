@@ -65,7 +65,7 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 #### 1. Para o Cidadão (Munícipe)
 - **Orientação Cívica e Direitos em Linguagem Clara:** Através do assistente inteligente **ZelaBot**, o cidadão tira dúvidas imediatas sobre o que pode descartar gratuitamente nos Ecopontos (até 1 m³/dia pela Lei nº 13.478/2002), responsabilidade sobre calçadas (Decreto nº 58.611/2019) e prazos legais da Carta de Serviços PMSP.
 - **Engajamento Comunitário (Internet dos Comportamentos - IoB):** Com o botão de apoio comunitário (**+1**), os munícipes corroboram a criticidade do chamado da sua rua, elevando a prioridade do atendimento perante a administração pública.
-- **Acompanhamento Real de Protocolos e Bairros:** Sem sair da conversa, o cidadão consulta o andamento real do seu protocolo ou os chamados abertos em qualquer bairro diretamente na base Oracle FIAP (via *fast-path* por `#ID` e **Tool Calling** nativo do `qwen/qwen3.8-27b`).
+- **Acompanhamento Real de Protocolos e Bairros:** Sem sair da conversa, o cidadão consulta o andamento real do seu protocolo ou os chamados abertos em qualquer bairro diretamente na base Oracle FIAP (via *fast-path* por `#ID` e **ReAct Tool Calling** em JSON estruturado com `phi-4-multimodal`).
 
 #### 2. Para a Gestão Pública (Subprefeituras & Concessionárias)
 - **Laudo Técnico com Enquadramento Legal Imediato:** Cada chamado submetido pelo app ou backend passa por triagem automatizada com citação da legislação municipal vigente (ex: Decreto nº 59.150/2019 para pavimentação; Decreto nº 57.545/2016 para drenagem).
@@ -111,28 +111,27 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
   [ NÚCLEO DE IA GENERATIVA, TOOL CALLING & RAG NORMATIVO MUNICIPAL ]
   ┌───────────────────────────────────────────────────────────────────────────────────────────────┐
   │ 1. HIGIENIZAÇÃO & PROTEÇÃO DE DADOS (LGPD) NA ENTRADA E NA SAÍDA                              │
-  │    ├─ Proteção LGPD (Mascaramento de CPFs e cartões antes de LLM, Oracle e SQLite)            │
+  │    ├─ Proteção LGPD (Mascaramento de CPFs e cartões antes de Foundry, Oracle e SQLite)        │
   │    └─ Sanitizador Mobile Clean (Remove pipes '|', <think> e Markdown bruto para o App)        │
   ├───────────────────────────────────────────────────────────────────────────────────────────────┤
-  │ 2. PIPELINE DE RECUPERAÇÃO SEMÂNTICA (RAG MUNICIPAL 512D)                                     │
-  │    ├─ Normalização Textual & Expansão Semântica Urbana (Gírias -> Termos Técnicos PMSP)       │
-  │    ├─ LocalSemanticEmbedder: Projeção Densa em R^512 com L2-norm = 1.0 (Cosine Similarity)    │
-  │    └─ ChromaDB (zelafix_knowledge_512d): Filtro estrito por categoria + re-ranking lexical    │
+  │ 2. PIPELINE DE RECUPERAÇÃO SEMÂNTICA EM NUVEM (RAG MUNICIPAL 1536D)                           │
+  │    ├─ Azure AI Foundry Embeddings: `embed-v-4-0` (1536D, L2-norm = 1.0, cache LRU + SHA-256)  │
+  │    └─ ChromaDB (`zelafix_knowledge_foundry_1536d`): HNSW Cosine Similarity com Top-K e corte  │
   ├───────────────────────────────────────────────────────────────────────────────────────────────┤
   │ 3. ORQUESTRAÇÃO DE CONTEXTO, IOT & TOOL CALLING ORACLE (SOMENTE LEITURA)                      │
   │    ├─ Fast-path por #ID de chamado + Memória automática das últimas mensagens (SQLite)        │
-  │    ├─ Tool Calling nativo: `consultar_chamados_oracle(id_chamado, bairro, limit)`             │
+  │    ├─ ReAct Tool Calling: `consultar_chamados_oracle` e `calcular_prazo_sla`                  │
   │    └─ Injeção de Telemetria IoT e Chunks Normativos Top-K                                     │
   └───────────────────────────────────────────────┬───────────────────────────────────────────────┘
                                                   │
                                                   ▼
 ====================================================================================================
-  [ MOTOR DE INFERÊNCIA MULTIMODAL & CONTINGÊNCIA RESILIENTE ]
+  [ MOTOR DE INFERÊNCIA MULTIMODAL & CONTINGÊNCIA DE REDE ]
   ┌─────────────────────────────────────────────────────────┐     ┌─────────────────────────────────────────────────────────┐
-  │   PROVEDOR PRIMÁRIO MULTIMODAL:                         │     │   FALLBACK LOCAL RESILIENTE:                            │
-  │   GROQ CLOUD (LPU) — qwen/qwen3.8-27b                   │ ──> │   MOTOR HEURÍSTICO ZELAFIX                              │
-  │   • Visão Computacional de fotos (Base64 e BLOB Oracle) │     │   Inferência Normativa Local & RAG                      │
-  │   • Tool Calling nativo + Laudo JSON estruturado        │     │   • Opera sem internet, sem chave ou sob 429 Rate Limit │
+  │   PROVEDOR ÚNICO MULTIMODAL (AZURE AI FOUNDRY):         │     │   CONTINGÊNCIA NORMATIVA DE REDE:                       │
+  │   `phi-4-multimodal` (Phi-4-multimodal-instruct)        │ ──> │   DEGRADAÇÃO GRACIOSA SEM CRASH (HTTP 200)              │
+  │   • Visão Computacional de fotos (Base64 e BLOB Oracle) │     │   Inferência Normativa sobre RAG / PMSP                 │
+  │   • ReAct Tool Calling + Structured JSON (Pydantic)     │     │   • Atua apenas em erro de rede, 429 ou bloqueio Jailbreak│
   └─────────────────────────────────────────────────────────┘     └─────────────────────────────────────────────────────────┘
                                                   │
                                                   ▼
@@ -141,9 +140,9 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
   ┌───────────────────────────────────────────────┐   ┌───────────────────────────┐   ┌───────────────────────────────┐
   │  BANCO ORACLE FIAP (MODO THIN EM PYTHON)      │   │  BANCO RELACIONAL SQLITE  │   │  BANCO VETORIAL CHROMADB      │
   │  • oracle.fiap.com.br:1521/orcl               │   │  (data/zelafixai.db)      │   │  (data/chroma/)               │
-  │  • Estreitamente SOMENTE LEITURA (SELECT)     │   │  • Modo WAL ativo         │   │  • Coleção HNSW 512D          │
-  │  • Bairros acento-insensíveis (TRANSLATE)     │   │  • Auditoria de triagens  │   │  • 31 Chunks Normativos       │
-  │  • Extração de foto BLOB apenas sob demanda   │   │  • Histórico por sessão   │   │  • L2-norm e Cosine Metric    │
+  │  • Estreitamente SOMENTE LEITURA (SELECT)     │   │  • Modo WAL ativo         │   │  • Coleção HNSW 1536D         │
+  │  • Bairros acento-insensíveis (TRANSLATE)     │   │  • Auditoria de triagens  │   │  • 31 Chunks + Fingerprint    │
+  │  • Extração de foto BLOB apenas sob demanda   │   │  • Histórico por sessão   │   │  • Cosine Similarity Nativa   │
   └───────────────────────────────────────────────┘   └───────────────────────────┘   └───────────────────────────────┘
 ====================================================================================================
 ```
@@ -152,38 +151,31 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 
 ## 🧠 5. Abordagem de IA Selecionada & Justificativa Técnica
 
-### Por que a Abordagem Híbrida: LLM Multimodal + RAG Normativo + Motor Resiliente?
+### Por que Azure AI Foundry (`phi-4-multimodal` + `embed-v-4-0`) + RAG Normativo?
 
 Na administração pública e na segurança viária municipal, **alucinações de inteligência artificial são inaceitáveis**:
 - Um modelo de linguagem convencional sem ancoragem normativa poderia alucinar prazos irreais, citar leis revogadas ou enviar equipes da Subprefeitura para reparar adutoras de competência exclusiva da Sabesp ou cabos de média tensão sob concessão da ENEL.
-- Alternativas puramente probabilísticas (classificadores caixa-preta) não oferecem explicabilidade jurídica nem produzem laudos fundamentados.
-- Modelos pesados de Deep Learning (como PyTorch/HuggingFace com 1 GB de footprint) causariam travamento compulsório por falta de memória (**OOM Killer**) no plano gratuito do Render (limite de 512 MB de RAM).
+- Classificações manuais por matrizes estáticas de palavras-chave quebram facilmente com sinônimos, erros de digitação ou descrições coloquiais dos munícipes.
+- Modelos pesados locais (como PyTorch/HuggingFace) causariam travamento compulsório por falta de memória (**OOM Killer**) no plano gratuito do Render (limite de 512 MB de RAM).
 
-A arquitetura do **ZelaFix AI** resolve esse dilema através da integração de pilares técnicos objetivos:
-1. **RAG Normativo Fundamentado:** Toda resposta do ZelaBot e todo laudo de triagem técnica é ancorado em decretos, portarias e manuais vigentes da Cidade de São Paulo.
-2. **Provedor Primário Multimodal (Groq Cloud Qwen 3.8 27B):** Utiliza o modelo multimodal de pesos abertos **`qwen/qwen3.8-27b`** via infraestrutura LPU da Groq Cloud, com latência ultra-rápida (~350ms) e capacidade nativa de visão computacional para fotos de defeitos urbanos.
-3. **Integração Real-Time com Banco Oracle FIAP (Modo Thin):** Consulta chamados reais, endereços, contagem de votos comunitários (+1 IoB) e fotos BLOB diretamente no Oracle (`oracle.fiap.com.br:1521/orcl`) em Python nativo e sem binários externos.
-4. **Motor Heurístico Local Resiliente (Fallback Offline):** Em caso de indisponibilidade de rede, cota de tokens (429 Rate Limit) ou ausência de internet, o motor local sintetiza pareceres e respostas técnicas a partir dos chunks recuperados do ChromaDB com latência inferior a 15ms e **zero crashes**.
+A arquitetura refatorada do **ZelaFix AI** resolve esse dilema através da integração de pilares técnicos objetivos:
+1. **RAG Normativo Fundamentado em Nuvem:** Toda resposta do ZelaBot e todo laudo de triagem técnica é ancorado em decretos, portarias e manuais vigentes da Cidade de São Paulo via embeddings densos reais (`embed-v-4-0`).
+2. **Modelo Multimodal Único (`phi-4-multimodal` no Azure AI Foundry):** Executa **chat cívico em JSON estruturado**, **triagem técnica**, **diagnóstico de bairros**, **visão computacional de imagens** (Base64 e BLOB Oracle) e **ReAct Tool Calling** usando o SDK oficial `openai` (API v1), sem troca/fallback entre múltiplos LLMs.
+3. **Integração Real-Time com Banco Oracle FIAP (Modo Thin):** Consulta chamados reais, endereços, contagem de votos comunitários (+1 IoB) e fotos BLOB diretamente no Oracle (`oracle.fiap.com.br:1521/orcl`) em Python nativo (`SELECT` estrito).
+4. **Degradação Graciosa de Rede / Segurança:** Apenas em cenários extremos (bloqueio de segurança por Prompt Injection/Jailbreak, indisponibilidade externa de rede ou rajada de rate limit `429`), a camada de serviço garante resposta estruturada HTTP 200 segura apoiada nos chunks RAG sem derrubar o app mobile.
 5. **Proteção LGPD & Higienização Mobile:** Mascaramento automático de dados pessoais e formatação limpa para consumo do aplicativo React Native.
 
 ---
 
-## 🔬 6. Embeddings Vetoriais Locais (512D), Cosine Similarity e Otimização para o Render
+## 🔬 6. Embeddings Vetoriais em Nuvem (1536D), Cache SHA-256 e Eficiência no Render
 
-### Por que Desenvolver o `LocalSemanticEmbedder`?
-Em ambientes de nuvem restritos (plano gratuito do Render com teto rigoroso de **512 MB de RAM**), a utilização de frameworks tradicionais como PyTorch (`torch`), TensorFlow ou `sentence-transformers` aloca entre 800 MB e 1.4 GB de memória RAM logo na importação de pesos neurais. Isso desencadeia imediatamente o encerramento do processo pelo Linux OOM-Killer (`SIGKILL: Out of Memory`).
+### Por que Embeddings Densos em Nuvem (`embed-v-4-0`) com Fingerprint Local?
+Em ambientes de nuvem restritos (plano gratuito do Render com teto rigoroso de **512 MB de RAM**), carregar redes neurais localmente via PyTorch ou `sentence-transformers` aloca 800 MB a 1.4 GB de RAM e aciona o Linux OOM-Killer (`SIGKILL`). Ao mesmo tempo, projeções puramente léxicas locais não capturam semântica profunda de relatos coloquiais.
 
-Para solucionar essa restrição arquitetural sem abrir mão de busca vetorial genuína:
-1. **Espaço Vetorial Contínuo em 512 Dimensões ($\mathbb{R}^{512}$):** O `LocalSemanticEmbedder` (`src/utils/embeddings.py`) mapeia qualquer texto ou consulta para um vetor denso de 512 posições utilizando hash estocástico determinístico (MD5/Murmur), ponderação IDF com amortecimento logarítmico e n-grams de tamanho 1 e 2.
-2. **Normalização Euclidiana Unitária ($L_2\text{-norm} = 1.0$):**
-   $$\hat{v} = \frac{\vec{v}}{\|\vec{v}\|_2} = \frac{\vec{v}}{\sqrt{\sum_{i=1}^{512} v_i^2}}$$
-3. **Similaridade de Cosseno Equivalente ao Produto Escalar:**
-   Com vetores normalizados na esfera unitária, o cálculo da Similaridade de Cosseno se reduz ao produto escalar direto:
-   $$\text{cosine\_similarity}(\hat{u}, \hat{v}) = \hat{u} \cdot \hat{v} = \sum_{i=1}^{512} \hat{u}_i \cdot \hat{v}_i$$
-4. **Desempenho e Eficiência Extrema:**
-   - **Footprint de Memória:** Menos de **42 MB de RAM** (economia de 95% em relação ao PyTorch).
-   - **Latência de Busca:** Sub-milissegundo (**< 0.15ms** por consulta vetorial).
-   - **Persistência HNSW no ChromaDB:** Compatibilidade total com a coleção `zelafix_knowledge_512d` persistida em `data/chroma/`.
+A solução adotada combina **precisão semântica de nuvem com footprint mínimo**:
+1. **Embeddings Multilíngues de Alta Dimensionalidade (1536D):** O modelo `embed-v-4-0` no Azure AI Foundry gera vetores unitários normalizados em `R^1536`, compreendendo contexto urbano em português sem necessidade de mapas manuais de sinônimos ou bibliotecas de ML pesadas no container.
+2. **Zero Reindexação Desnecessária (`kb_fingerprint.json`):** No startup, é calculado um hash SHA-256 sobre os 31 chunks normativos e o nome do modelo de embedding. Se a base não mudou, o ChromaDB (`zelafix_knowledge_foundry_1536d`) aquece instantaneamente a partir do disco com **0 chamadas externas de API**.
+3. **Cache LRU em Memória (`_MAX_CACHE_EMBEDDINGS = 256`):** Consultas repetidas são atendidas com latência sub-milissegundo e custo zero de API, mantendo a coleção HNSW no ChromaDB com similaridade de cosseno pura (`RAG_MIN_SCORE = 0.28`).
 
 ---
 
@@ -274,7 +266,7 @@ O microsserviço implementa camadas ativas de conformidade e tratamento de dados
     "Solicitar confirmação e apoios de outros vizinhos (+1)",
     "Acompanhar o prazo de execução via protocolo oficial"
   ],
-  "origem_resposta": "ZelaBot (Groq qwen/qwen3.8-27b)",
+  "origem_resposta": "ZelaBot (Azure AI Foundry: phi-4-multimodal + embed-v-4-0)",
   "sessionId": "sess_cidadao_01",
   "sources_used": [
     {
@@ -321,7 +313,7 @@ O microsserviço implementa camadas ativas de conformidade e tratamento de dados
     "Compactar com rolo tandem vibratório para nivelamento perfeito"
   ],
   "analise_visual": "Cratera asfáltica profunda com bordas irregulares sobre a via.",
-  "origem_triagem": "ZelaFix AI Triagem Multimodal (Groq qwen/qwen3.8-27b + RAG)"
+  "origem_triagem": "ZelaFix AI Triagem Multimodal (Azure AI Foundry: phi-4-multimodal + embed-v-4-0)"
 }
 ```
 
@@ -375,20 +367,20 @@ TOTAL GERAL: 82/82 TESTES APROVADOS — ZERO FALHAS DETECTADAS
   7. *Triagem de Saneamento Sabesp:* Vazamento de água com SLA 12h para estancar fuga hídrica.
   8. *Integridade Relacional no SQLite:* Auditoria e histórico persistidos sem deadlocks.
   9. *Telemetria e Conexão Oracle FIAP:* Status e conectividade em tempo real (somente leitura).
-  10. *Visão Computacional Multimodal (Qwen 3.8 27B):* Diagnóstico técnico sobre foto do dano urbano.
+  10. *Visão Computacional Multimodal (`phi-4-multimodal`):* Diagnóstico técnico sobre foto do dano urbano.
   11. *Roteamento Real Oracle + Telemetria IoT:* Categoria `'Drenagem e Esgoto'` com sensor de bueiro sem colidir com Sabesp.
   12. *Memória Multi-Turno Automática + Insights Vivos:* Carregamento de sessão por `sessionId` no SQLite e insights alimentados pelo Oracle FIAP.
 
 ### 10.3 Bateria de Testes de Estresse Pesado & Adversariais (`stress_test_zelafix.py`)
 Submeteu a aplicação a condições extremas e cenários destrutivos:
-- **Payloads Gigantes:** Ingestão de mensagens de **50.000 caracteres** sem estouro de memória (OOM), processadas com fallback seguro.
+- **Payloads Gigantes:** Ingestão de mensagens de **50.000 caracteres** sem estouro de memória (OOM), processadas com degradação segura.
 - **Resiliência Unicode:** Null bytes (`\x00`), caracteres Zalgo corrompidos, marcas de inversão Right-to-Left (RTL) e scripts XSS (`<script>`) higienizados com sucesso.
 - **Blindagem SQL Injection:** Ataques nos endpoints de histórico e auditoria (`' OR 1=1; DROP TABLE`, `UNION SELECT`, `SLEEP`) rechaçados sem qualquer corrupção das tabelas SQLite.
-- **Concorrência Massiva (50 Threads Simultâneas):** 50 requisições simultâneas de leitura e escrita concorrentes no SQLite em modo `WAL` (*Write-Ahead Logging*) concluídas sem deadlocks nem erros.
+- **Concorrência Massiva (50 Threads Simultâneas):** 50 requisições simultâneas de leitura e escrita concorrentes no SQLite em modo `WAL` (*Write-Ahead Logging*) concluídas sem deadlocks nem erros (`50/50`).
 
 ### 10.4 Interpretação Crítica dos Resultados
-- **Precisão do RAG sem Alucinação Cruzada:** O re-ranking lexical híbrido + filtro estrito por categoria no ChromaDB garantiu **37/37 (100%)** de recuperação normativa e **0 falsos positivos** em perguntas fora de escopo.
-- **Comportamento sob Cota Livre da LLM (`429 OTPM`):** No plano gratuito da Groq para `qwen/qwen3.8-27b` (limite de `1.000` output tokens/minuto), rajadas consecutivas de triagem JSON ou raciocínio longo (`<think>`) podem acionar `429 rate_limit_exceeded` ou atingir o teto de tokens. Nesses cenários, o fallback heurístico PMSP assume em `< 15 ms`, garantindo SLA e código HTTP 200 sem derrubar o app mobile.
+- **Precisão do RAG sem Alucinação Cruzada:** Os embeddings multilíngues `embed-v-4-0` (1536D) no ChromaDB com `RAG_MIN_SCORE = 0.28` e filtro estrito por categoria garantiram **37/37 (100.0%)** de recuperação normativa e **0 falsos positivos** em perguntas fora de escopo.
+- **Comportamento sob Sobrecarga Concorrente (`429`) e Bloqueio `Jailbreak`:** Rajadas de 50 requisições paralelas simultâneas contra a cota de tokens por minuto do deployment `phi-4-multimodal` ou tentativas de Prompt Injection bloqueadas pelo filtro de segurança do Azure acionam a contingência normativa local, garantindo código HTTP 200 e zero vazamento de dados sem derrubar o app mobile.
 
 ---
 
@@ -397,12 +389,12 @@ Submeteu a aplicação a condições extremas e cenários destrutivos:
 ### 11.1 Proteção de Dados Pessoais (LGPD) e Credenciais
 - Nenhuma chave de API ou credencial Oracle está versionada no repositório. O arquivo [`.env.example`](./deploy_zelafixai_render/.env.example) contém apenas os nomes das variáveis modelo.
 - O acesso ao banco Oracle FIAP ocorre em **modo estritamente somente leitura (`SELECT`)** com bind variables e timeouts curtos.
-- Números de CPF e cartão eventualmente digitados são mascarados **na entrada** (antes do envio à Groq, ao Oracle ou à gravação no SQLite) e **na saída** via `sanitizar_lgpd`.
+- Números de CPF e cartão eventualmente digitados são mascarados **na entrada** (antes do envio ao Azure AI Foundry, ao Oracle ou à gravação no SQLite) e **na saída** via `sanitizar_lgpd`.
 
 ### 11.2 Limitações Transparentes da Inteligência Artificial
 1. **Oclusão em Vistorias Subterrâneas Profundas:** A triagem computacional baseada em relatos textuais e fotos de superfície não substitui a inspeção física por CFTV em galerias pluviais profundas ou adutoras enterradas.
-2. **Qualidade Visual e Iluminação Noturna das Fotos:** Imagens tremidas, muito escuras ou genéricas podem limitar o laudo multimodal do `qwen/qwen3.8-27b`, levando o sistema a se apoiar no texto do relato e nos dados do Oracle.
-3. **Dependência de Cota Externa e Papel Consultivo:** O provedor Groq em tier gratuito impõe limites de tokens por minuto (supridos pelo motor heurístico local em contingência), e todo laudo gerado atua como apoio técnico consultivo à decisão do engenheiro/servidor municipal.
+2. **Qualidade Visual e Iluminação Noturna das Fotos:** Imagens tremidas, muito escuras ou genéricas podem limitar o laudo multimodal do `phi-4-multimodal`, levando o sistema a se apoiar no texto do relato e nos dados do Oracle.
+3. **Limites de Taxa por Minuto e Papel Consultivo:** A cota de TPM do recurso no Azure AI Foundry pode exigir controle sob rajadas extremas (cobertas por contingência normativa HTTP 200), e todo laudo gerado atua como apoio técnico consultivo à decisão do engenheiro/servidor municipal.
 
 ---
 
@@ -418,15 +410,16 @@ Disruptive-Architectures-IoT-IoB-IA/
 └── deploy_zelafixai_render/            # Microsserviço Python FastAPI (Deploy no Render)
     ├── data/
     │   ├── zelafixai.db                # SQLite com tabelas relacionais (modo WAL)
-    │   └── chroma/                     # ChromaDB com coleção vetorial HNSW (512D)
+    │   ├── kb_fingerprint.json         # Fingerprint SHA-256 para evitar re-embeddings no boot
+    │   └── chroma/                     # ChromaDB com coleção vetorial HNSW (1536D)
     ├── src/
     │   ├── core/
-    │   │   ├── config.py               # Variáveis de ambiente, credenciais Oracle e modelo Qwen
-    │   │   ├── prompts.py              # System Prompts do ZelaBot e triagem técnica
+    │   │   ├── config.py               # Variáveis de ambiente, Oracle e Azure AI Foundry
+    │   │   ├── prompts.py              # System Prompts estruturados (ZelaBot, Triagem e Insights)
     │   │   └── __init__.py
     │   ├── database/
     │   │   ├── connection.py           # Conexão SQLite WAL com timeout de 5000ms
-    │   │   ├── vector_store.py         # Singleton thread-safe do ChromaDB
+    │   │   ├── vector_store.py         # Singleton thread-safe do ChromaDB (1536D)
     │   │   ├── oracle_client.py        # Conexão Oracle FIAP Modo Thin (100% Python nativo)
     │   │   └── __init__.py
     │   ├── knowledge/                  # Base Normativa RAG Oficial da PMSP (8 Módulos)
@@ -443,31 +436,30 @@ Disruptive-Architectures-IoT-IoB-IA/
     │   │   ├── chat_repository.py      # CRUD parametrizado de mensagens e auditorias
     │   │   └── __init__.py
     │   ├── routers/
-    │   │   ├── ai.py                   # Endpoints REST (/chat, /triagem, /chamados, /oracle/status)
+    │   │   ├── ai.py                   # Endpoints REST (/chat, /triagem, /insights, /chamados, /oracle/status)
     │   │   ├── health.py               # Sondas operacionais (/health e /health/ready)
     │   │   └── __init__.py
     │   ├── schemas/
-    │   │   ├── chamado.py              # DTOs de contexto urbano, fotos e apoios IoB
+    │   │   ├── chamado.py              # DTOs de contexto urbano, fotos, IoT e apoios IoB
     │   │   ├── chat.py                 # DTOs de mensagens e histórico de sessão
     │   │   ├── insights.py             # DTOs de laudo técnico de triagem e diagnósticos
     │   │   └── __init__.py
     │   ├── services/
-    │   │   ├── chat_service.py         # Orquestrador do ZelaBot com RAG e fallbacks
-    │   │   ├── triagem_service.py      # Emissor do laudo técnico com visão computacional
-    │   │   ├── insights_service.py     # Diagnóstico preventivo por bairro
-    │   │   ├── knowledge_service.py    # Busca vetorial híbrida e vocabulário IDF
-    │   │   ├── groq_service.py         # Cliente Multimodal Groq (qwen/qwen3.8-27b + Tool Calling)
-    │   │   ├── chamado_oracle_service.py # Tool Calling e contexto Oracle FIAP (somente SELECT)
+    │   │   ├── chat_service.py         # Orquestrador do ZelaBot (RAG + ReAct Tool Calling + Pydantic JSON)
+    │   │   ├── triagem_service.py      # Emissor do laudo técnico multimodal e invariantes IoB/RAG
+    │   │   ├── insights_service.py     # Diagnóstico preventivo por bairro via Foundry + Oracle
+    │   │   ├── knowledge_service.py    # Indexação SHA-256 e busca semântica 1536D (`embed-v-4-0`)
+    │   │   ├── foundry_service.py      # Cliente Azure AI Foundry (`openai` SDK: `phi-4-multimodal` + `embed-v-4-0`)
+    │   │   ├── chamado_oracle_service.py # Tools e contexto Oracle FIAP (somente SELECT)
     │   │   └── __init__.py
     │   └── utils/
-    │       ├── text.py                 # Expansão semântica urbana e sanitizador mobile
-    │       ├── embeddings.py           # LocalSemanticEmbedder (512D) e cosseno
+    │       ├── text.py                 # Normalização ASCII e higienizador Mobile Clean
     │       ├── guardrails.py           # Anonimização automática LGPD de CPF/cartões
     │       └── __init__.py
     ├── main.py                         # Entrypoint padrão ASGI (uvicorn main:app)
     ├── api.py                          # Application Factory FastAPI e rotas
     ├── render.yaml                     # Configuração de build/start em nuvem
-    ├── requirements.txt                # Dependências declaradas (fastapi, groq, chromadb, oracledb, pillow)
+    ├── requirements.txt                # Dependências declaradas (fastapi, openai, chromadb, oracledb, pillow)
     ├── test_knowledge_coverage.py      # Teste de cobertura semântica RAG (37 casos)
     ├── test_zelafix_scenarios.py       # Suíte de homologação de cenários (12 casos)
     ├── stress_test_zelafix.py          # Bateria de estresse e testes adversariais (33 casos)
@@ -481,14 +473,17 @@ Disruptive-Architectures-IoT-IoB-IA/
 ### Variáveis de Ambiente (`.env`)
 Crie o arquivo `.env` em `deploy_zelafixai_render/` a partir do `.env.example` (não versionado):
 ```env
-AI_PROVIDER=groq
-GROQ_MODEL=qwen/qwen3.8-27b
-GROQ_API_KEY=gsk_sua_chave_groq_aqui
-GROQ_BASE_URL=https://api.groq.com
+AI_BASE_URL=https://seu-recurso-foundry.services.ai.azure.com/openai/v1
+AI_API_KEY=sua_chave_azure_ai_foundry_aqui
+AI_MODEL=phi-4-multimodal
+AI_EMBEDDING_MODEL=embed-v-4-0
+AI_EMBEDDING_DIMENSIONS=1536
+AI_TIMEOUT_SECONDS=25.0
 PORT=8000
 
 ORACLE_USER=seu_usuario_oracle
 ORACLE_PASSWORD=sua_senha_oracle
+ORACLE_URL=jdbc:oracle:thin:@//oracle.fiap.com.br:1521/orcl
 ORACLE_DSN=oracle.fiap.com.br:1521/orcl
 ```
 
