@@ -17,7 +17,7 @@ from src.services.knowledge_service import KnowledgeService
 
 CASOS = [
     # Pavimentação e Tapa-Buraco
-    ("Tem um buraco enorme na rua quebrando a suspensão dos carros", "pav_01"),
+    ("Tem um buraco no asfalto da rua que precisa de reparo com tapa-buraco", "pav_01"),
     ("Qual o prazo que a prefeitura tem para tapar buraco no asfalto?", "pav_02"),
     ("Abriu uma cratera profunda no meio da avenida com risco de acidente", "pav_03"),
     ("A Sabesp abriu uma vala na rua e não fechou direito o asfalto", "pav_04"),

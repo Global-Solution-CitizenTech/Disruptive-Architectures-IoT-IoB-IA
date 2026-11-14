@@ -197,7 +197,7 @@ def teste_lgpd_mascaramento():
             registrar_resultado(
                 f"Anonimização LGPD (Resposta + SQLite): [{texto[:35]}...]",
                 protegido,
-                "CPF mascarado antes do Groq e do SQLite." if protegido else f"VAZAMENTO detectado (resp={vazou_resposta}, db={vazou_sqlite})"
+                "CPF mascarado antes do Foundry e do SQLite." if protegido else f"VAZAMENTO detectado (resp={vazou_resposta}, db={vazou_sqlite})"
             )
         except Exception as e:
             registrar_resultado("Anonimização LGPD", False, f"Erro: {e}")

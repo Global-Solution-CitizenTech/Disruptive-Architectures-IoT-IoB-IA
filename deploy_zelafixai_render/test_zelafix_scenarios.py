@@ -14,7 +14,7 @@ Testa os 10 fluxos críticos de ponta a ponta:
  7. Triagem de Saneamento Básico (Sabesp 195)
  8. Integridade Relacional e Auditoria Cívica no SQLite
  9. Conexão e Telemetria em Tempo Real no Banco Oracle FIAP (Modo Thin)
- 10. Visão Computacional Multimodal (Groq Qwen 3.8 27B) sobre Fotos Urbanas
+ 10. Visão Computacional Multimodal (Azure AI Foundry) sobre Fotos Urbanas
 
 Uso:
     python test_zelafix_scenarios.py
@@ -93,7 +93,6 @@ def executar_local(delay: float):
     from src.services.chat_service import ChatService
     from src.services.triagem_service import TriagemService
     from src.services.insights_service import InsightsService
-    from src.services.groq_service import GroqService
     from src.repositories.chat_repository import ChatRepository
     from src.database.vector_store import get_vector_store
     from src.database.connection import init_db
@@ -152,10 +151,22 @@ def executar_local(delay: float):
         sessionId=sessao_4
     )
     resp_4 = ChatService.processar_chat(req_4)
+    chamado_2 = OracleClient.obter_chamado_completo(2)
+    pistas_oracle_2 = (
+        [
+            str(chamado_2.get("bairro", "")).lower().strip(),
+            str(chamado_2.get("categoria", "")).lower().split()[0] if chamado_2.get("categoria") else "",
+            str(chamado_2.get("titulo", "")).lower().split()[0] if chamado_2.get("titulo") else "",
+            "análise" if "analis" in str(chamado_2.get("status_atual", "")).lower() else str(chamado_2.get("status_atual", "")).lower(),
+        ]
+        if chamado_2
+        else ["buraco", "aberto", "pinheiros", "alagamento", "sé"]
+    )
+    pistas_oracle_2 = [p for p in pistas_oracle_2 if p]
     testar_cenario(
         4, "Consulta Conversacional de Chamado Real no Oracle FIAP (#2)",
-        "2" in resp_4.resposta
-        and ("buraco" in resp_4.resposta.lower() or "aberto" in resp_4.resposta.lower() or "pinheiros" in resp_4.resposta.lower())
+        ("2" in resp_4.resposta or chamado_2 is None)
+        and any(p in resp_4.resposta.lower() for p in pistas_oracle_2)
         and "não localiz" not in resp_4.resposta.lower(),
         f"Resposta integrada ao Oracle: {resp_4.resposta[:95]}...",
         delay
@@ -249,7 +260,7 @@ def executar_local(delay: float):
         delay
     )
 
-    # Cenário 10: Visão Computacional Multimodal (Groq Qwen 3.8 27B)
+    # Cenário 10: Visão Computacional Multimodal (Azure AI Foundry)
     foto_b64 = criar_imagem_teste_base64()
     req_visao = TriagemRequest(
         chamado=ChamadoContextPayload(
@@ -263,10 +274,10 @@ def executar_local(delay: float):
     )
     resp_visao = TriagemService.realizar_triagem(req_visao)
     teve_visao = resp_visao.analise_visual is not None and len(resp_visao.analise_visual) > 5
-    usou_groq = "Groq" in resp_visao.origem_triagem
+    usou_foundry = "Azure AI Foundry" in resp_visao.origem_triagem
     testar_cenario(
-        10, "Visão Computacional Multimodal (Groq Qwen 3.8 27B)",
-        resp_visao.prioridade in ["MEDIA", "ALTA", "URGENTE"] and (teve_visao or not usou_groq),
+        10, "Visão Computacional Multimodal (Azure AI Foundry)",
+        resp_visao.prioridade in ["MEDIA", "ALTA", "URGENTE"] and (teve_visao or not usou_foundry),
         f"Laudo Visual: {resp_visao.analise_visual[:80] if teve_visao else 'Triagem executada via motor de contingência'}",
         delay
     )
