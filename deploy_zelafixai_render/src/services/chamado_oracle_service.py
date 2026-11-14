@@ -1,9 +1,11 @@
 """
-Serviço de Integração e Tool Calling com o Oracle DB (Somente Leitura) — ZelaFix AI
+Serviço de Tool Calling e Integração Oracle DB (Somente Leitura) — ZelaFix AI
 Global Solution 2 — Disruptive Architectures: IoT, IoB & Generative IA (FIAP 2TDSPG)
 """
 import re
 import logging
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from typing import Optional, Dict, Any, Tuple
 from src.database.oracle_client import OracleClient
 from src.schemas.chamado import ChamadoContextPayload
@@ -13,45 +15,74 @@ logger = logging.getLogger("ZelaFixAI.ChamadoOracleService")
 
 _PADRAO_CHAMADO_ID = re.compile(
     r"(?:chamado|ocorr[eê]ncia|protocolo)\s*(?:d[eo]\s*)?(?:n[úu]mero|num\.?|n[ºo°]\.?|id|#)?\s*(\d+)|(?<!\S)#(\d+)\b",
-    re.IGNORECASE
+    re.IGNORECASE,
 )
 
-TOOLS_ORACLE = [
+_SLA_PADRAO_HORAS = {
+    "URGENTE": 12,
+    "ALTA": 24,
+    "MEDIA": 48,
+    "BAIXA": 72,
+    "CET_SEMAFORO": 4,
+}
+
+TOOLS_ZELAFIX = [
     {
         "type": "function",
         "function": {
             "name": "consultar_chamados_oracle",
             "description": (
-                "Consulta somente leitura de chamados urbanos no banco Oracle da ZelaFix. "
-                "Use apenas quando o munícipe pedir para listar, buscar ou verificar status de chamados por bairro ou protocolo."
+                "Consulta somente leitura (SELECT) de chamados urbanos reais no banco Oracle FIAP. "
+                "Use quando o munícipe pedir status/detalhes de um protocolo, listar chamados recentes ou panorama de um bairro."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "id_chamado": {
                         "type": "integer",
-                        "description": "ID numérico específico do chamado/protocolo, se informado."
+                        "description": "ID numérico específico do chamado/protocolo, se informado.",
                     },
                     "bairro": {
                         "type": "string",
-                        "description": "Nome do bairro citado (ex: Vila Mariana, Pinheiros, Sé). Omita para busca geral."
+                        "description": "Nome do bairro citado (ex: Vila Mariana, Pinheiros, Sé). Omita para busca geral.",
                     },
                     "limit": {
                         "type": "integer",
-                        "description": "Quantidade máxima de chamados recentes (1 a 10). Padrão: 5."
+                        "description": "Quantidade máxima de chamados recentes (1 a 10). Padrão: 5.",
                     },
                 },
                 "required": [],
             },
         },
-    }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "calcular_prazo_sla",
+            "description": (
+                "Retorna data e hora atual em São Paulo e calcula a previsão exata de atendimento (SLA) "
+                "para uma prioridade ou emergência semafórica."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prioridade": {
+                        "type": "string",
+                        "enum": ["URGENTE", "ALTA", "MEDIA", "BAIXA", "CET_SEMAFORO"],
+                        "description": "Nível de prioridade ou código CET_SEMAFORO para semáforo apagado.",
+                    }
+                },
+                "required": ["prioridade"],
+            },
+        },
+    },
 ]
 
 
 class ChamadoOracleService:
     """
     Orquestra consultas somente leitura (`SELECT`) ao Oracle FIAP via fast-path
-    por ID de chamado ou via Tool Calling nativo do Groq.
+    por ID ou via Tool Calling nativo no Azure AI Foundry.
     """
 
     @staticmethod
@@ -90,7 +121,7 @@ class ChamadoOracleService:
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
         """
         Retorna (texto_formatado_contexto, dados_dict_oracle) para um chamado específico
-        ou contexto estruturado enviado pelo app/Java.
+        ou contexto estruturado enviado pelo app mobile/Java.
         """
         target_id = id_chamado or (contexto_dto.id if contexto_dto else None)
         dados_oracle: Optional[Dict[str, Any]] = None
@@ -129,8 +160,21 @@ class ChamadoOracleService:
         return "", None
 
     @classmethod
-    def executar_tool_oracle(cls, nome_tool: str, argumentos: Dict[str, Any]) -> str:
-        """Executa tool somente leitura acionada pelo Groq Qwen 3.8 27B."""
+    def executar_tool(cls, nome_tool: str, argumentos: Dict[str, Any]) -> str:
+        """Executa tools somente leitura acionadas pelo modelo via Function Calling."""
+        if nome_tool == "calcular_prazo_sla":
+            prio = str(argumentos.get("prioridade", "MEDIA")).upper().strip()
+            horas = _SLA_PADRAO_HORAS.get(prio, 48)
+            try:
+                agora = datetime.now(ZoneInfo("America/Sao_Paulo"))
+            except Exception:
+                agora = datetime.utcnow() - timedelta(hours=3)
+            limite = agora + timedelta(hours=horas)
+            return (
+                f"Data/hora atual em São Paulo: {agora.strftime('%d/%m/%Y %H:%M')}. "
+                f"SLA normativo para {prio}: {horas}h (previsão limite até {limite.strftime('%d/%m/%Y %H:%M')})."
+            )
+
         if nome_tool != "consultar_chamados_oracle":
             return "Ferramenta não suportada."
 
@@ -150,7 +194,8 @@ class ChamadoOracleService:
         limit = max(1, min(limit, 10))
 
         recentes = OracleClient.listar_chamados_recentes(limit=limit, bairro=bairro)
-        if not recentes:
+        resumo = OracleClient.resumo_estatistico_bairro(bairro=bairro)
+        if not recentes and not (resumo.get("oracle_online") and resumo.get("total_chamados", 0) > 0):
             escopo = f"no bairro '{bairro}'" if bairro else "cadastrados"
             return f"Nenhum chamado localizado {escopo} no Oracle FIAP (ou banco indisponível)."
 
@@ -159,4 +204,5 @@ class ChamadoOracleService:
             for c in recentes
         ]
         escopo = f"no bairro {bairro}" if bairro else "na cidade"
-        return sanitizar_lgpd(f"Chamados recentes no Oracle ({escopo}):\n" + "\n".join(linhas))
+        total_txt = f"Total ativo {escopo}: {resumo.get('total_chamados', len(recentes))} | Apoios (+1): {resumo.get('total_votos', 0)}\n"
+        return sanitizar_lgpd(total_txt + f"Chamados recentes ({escopo}):\n" + "\n".join(linhas))

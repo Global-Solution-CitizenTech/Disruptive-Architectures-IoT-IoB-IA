@@ -4,35 +4,40 @@ Global Solution 2 — Disruptive Architectures: IoT, IoB & Generative IA (FIAP 2
 """
 from typing import Dict, Any
 from fastapi import APIRouter
-from src.core.config import AI_PROVIDER, GROQ_MODEL, APP_TITLE, APP_VERSION
+from src.core.config import (
+    AI_PROVIDER,
+    AI_MODEL,
+    AI_EMBEDDING_MODEL,
+    APP_TITLE,
+    APP_VERSION,
+)
 
 health_router = APIRouter(tags=["Health"])
+
 
 @health_router.get("/")
 @health_router.get("/health")
 def health_check() -> Dict[str, Any]:
-    """
-    Retorna o status operacional do microsserviço de IA e versões dos motores.
-    """
+    """Retorna o status operacional do microsserviço e modelos ativos no Azure AI Foundry."""
     return {
         "status": "healthy",
         "service": APP_TITLE,
         "provider": AI_PROVIDER,
-        "model": f"{GROQ_MODEL} (Groq Cloud Multimodal) + Resilient Local Semantic Engine",
-        "database_oracle": "Oracle Thin Client (FIAP)",
-        "framework": "FastAPI + Clean Mobile Pipeline",
-        "version": APP_VERSION
+        "model": AI_MODEL,
+        "embedding_model": AI_EMBEDDING_MODEL,
+        "database_oracle": "Oracle Thin Client (FIAP — somente leitura)",
+        "framework": "FastAPI + Azure AI Foundry + ChromaDB",
+        "version": APP_VERSION,
     }
+
 
 @health_router.get("/health/ready")
 def health_ready() -> Dict[str, Any]:
-    """
-    Verifica a prontidão da base RAG e dos serviços locais.
-    """
+    """Verifica a prontidão do índice vetorial RAG e serviços locais."""
     from src.database.vector_store import get_vector_store
     vs = get_vector_store()
     return {
         "status": "ready",
         "vector_store": "online" if vs.is_ready else "fallback_mode",
-        "indexed_chunks": vs.count
+        "indexed_chunks": vs.count,
     }

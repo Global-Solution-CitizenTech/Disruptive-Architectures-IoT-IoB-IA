@@ -11,12 +11,16 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
-      - key: GROQ_API_KEY
+      - key: AI_BASE_URL
         sync: false
-      - key: GROQ_MODEL
-        value: qwen/qwen3.8-27b
-      - key: AI_PROVIDER
-        value: groq
+      - key: AI_API_KEY
+        sync: false
+      - key: AI_MODEL
+        value: phi-4-multimodal
+      - key: AI_EMBEDDING_MODEL
+        value: embed-v-4-0
+      - key: AI_EMBEDDING_DIMENSIONS
+        value: "1536"
       - key: ORACLE_USER
         sync: false
       - key: ORACLE_PASSWORD

@@ -100,18 +100,19 @@ def excluir_sessao_endpoint(session_id: str) -> dict:
 @ai_router.get("/vector-store/status")
 def vector_store_status_endpoint() -> dict:
     """
-    Retorna o status do Banco de Dados Vetorial ChromaDB (persistência, coleção e total de chunks normativos indexados).
+    Retorna o status do Banco de Dados Vetorial ChromaDB (persistência, coleção e chunks indexados).
     """
     from src.database.vector_store import get_vector_store, CHROMA_DIR, COLLECTION_NAME
-    from src.utils.embeddings import LocalSemanticEmbedder
+    from src.core.config import AI_EMBEDDING_DIMENSIONS, AI_EMBEDDING_MODEL
     vs = get_vector_store()
     return {
         "status": "online" if vs.is_ready else "fallback_mode",
         "database": "ChromaDB (HNSW)",
+        "embedding_model": AI_EMBEDDING_MODEL,
         "storage_path": CHROMA_DIR,
         "collection_name": COLLECTION_NAME,
         "indexed_chunks": vs.count,
-        "vector_dimensions": LocalSemanticEmbedder.DIMENSAO,
+        "vector_dimensions": AI_EMBEDDING_DIMENSIONS,
         "distance_metric": "cosine"
     }
 
