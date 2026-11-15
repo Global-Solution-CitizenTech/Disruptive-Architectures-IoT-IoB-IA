@@ -157,10 +157,12 @@ class FoundryService:
                     faltantes_txt.append(txt)
 
         if faltantes_txt:
+            emb_model = (os.environ.get("AI_EMBEDDING_MODEL") or cfg.AI_EMBEDDING_MODEL).strip()
+            if not emb_model or emb_model.lower() in ("disabled", "none", "offline", "false"):
+                return None
             client = cls._obter_cliente()
             if client is None:
                 return None
-            emb_model = (os.environ.get("AI_EMBEDDING_MODEL") or cfg.AI_EMBEDDING_MODEL).strip()
             try:
                 resp = client.embeddings.create(model=emb_model, input=faltantes_txt)
                 gerados = [_l2_normalize(list(item.embedding)) for item in resp.data]
