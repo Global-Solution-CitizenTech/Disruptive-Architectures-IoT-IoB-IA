@@ -4,7 +4,7 @@
 > **Disciplina:** Disruptive Architectures: IoT, IoB & Generative IA (FIAP — 2TDSPG)  
 > **Núcleo de Produção:** Microsserviço FastAPI em Produção no Render ([`deploy_zelafixai_render`](./deploy_zelafixai_render))  
 > **Banco de Dados Oficial:** Oracle Database FIAP (`oracle.fiap.com.br:1521/orcl` — Modo Thin, somente leitura `SELECT`)  
-> **Provedor de IA:** Azure AI Foundry (`ai-zelafix-e2-561432` — `phi-4-multimodal` + `embed-v-4-0`)  
+> **Provedor de IA:** Azure AI Foundry / Azure OpenAI (`gpt-5-nano` + `embed-v-4-0`)  
 
 ---
 
@@ -13,7 +13,7 @@
 O **ZelaFix AI** é o motor de inteligência artificial generativa multimodal e inteligência comportamental (IoB) da plataforma CitizenTech **ZelaFix**. Desenvolvido com foco no **ODS 11 da ONU (Cidades e Comunidades Sustentáveis)**, o agente atua entre os munícipes da Cidade de São Paulo e os órgãos públicos municipais:
 
 1. **Atendimento Cívico Especializado (ZelaBot):** Orienta munícipes sobre direitos, prazos regulamentares (SLAs) e procedimentos municipais fundamentados na legislação paulistana via RAG semântico em nuvem (`embed-v-4-0`, 1536D).
-2. **Visão Computacional Multimodal (Azure AI Foundry `phi-4-multimodal`):** Analisa fotografias enviadas pelos cidadãos (ou recuperadas do Oracle sob demanda), identificando danos urbanos e emitindo parecer técnico em formato estruturado (Pydantic JSON).
+2. **Visão Computacional Multimodal (Azure AI Foundry `gpt-5-nano`):** Analisa fotografias enviadas pelos cidadãos (ou recuperadas do Oracle sob demanda), identificando danos urbanos e emitindo parecer técnico em formato estruturado (Pydantic JSON).
 3. **Triagem Automática e Enquadramento Normativo:** Classifica prioridade (`BAIXA`, `MEDIA`, `ALTA`, `URGENTE`), órgão responsável, SLA regulamentar, enquadramento legal e checklist técnico de vistoria via Structured Outputs — sem matrizes rígidas de palavras-chave manuais.
 4. **Internet of Behaviors (IoB) & IoT:** Incorpora confirmações comunitárias (`+1` >= 25 apoios) e anomalias de sensores urbanos para elevar automaticamente a prioridade mínima da ocorrência para `ALTA` / `URGENTE`.
 5. **Integração Somente Leitura com Oracle FIAP:** Consulta chamados, histórico, votos e resumo de bairros via `oracledb` em Modo Thin (`SELECT` estrito) tanto por *fast-path* (`#ID`) quanto via **Tool Calling** nativo (`consultar_chamados_oracle`, `calcular_prazo_sla`).
@@ -49,7 +49,7 @@ O **ZelaFix AI** é o motor de inteligência artificial generativa multimodal e 
                                  ▼
  ┌────────────────────────────────────────────────────────────────────────┐
  │           🚀 AZURE AI FOUNDRY (`openai` SDK /OpenAI v1)                │
- │  • Modelo Único: phi-4-multimodal (Visão + Tool Calling + JSON)        │
+ │  • Modelo Único: gpt-5-nano (Visão + Tool Calling + JSON)              │
  │  • Sem fallback para outro modelo LLM                                  │
  │  • Structured Output validado via Pydantic                             │
  └───────────────────────────────────┬────────────────────────────────────┘

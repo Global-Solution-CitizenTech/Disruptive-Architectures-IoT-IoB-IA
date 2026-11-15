@@ -65,7 +65,7 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 #### 1. Para o Cidadão (Munícipe)
 - **Orientação Cívica e Direitos em Linguagem Clara:** Através do assistente inteligente **ZelaBot**, o cidadão tira dúvidas imediatas sobre o que pode descartar gratuitamente nos Ecopontos (até 1 m³/dia pela Lei nº 13.478/2002), responsabilidade sobre calçadas (Decreto nº 58.611/2019) e prazos legais da Carta de Serviços PMSP.
 - **Engajamento Comunitário (Internet dos Comportamentos - IoB):** Com o botão de apoio comunitário (**+1**), os munícipes corroboram a criticidade do chamado da sua rua, elevando a prioridade do atendimento perante a administração pública.
-- **Acompanhamento Real de Protocolos e Bairros:** Sem sair da conversa, o cidadão consulta o andamento real do seu protocolo ou os chamados abertos em qualquer bairro diretamente na base Oracle FIAP (via *fast-path* por `#ID` e **ReAct Tool Calling** em JSON estruturado com `phi-4-multimodal`).
+- **Acompanhamento Real de Protocolos e Bairros:** Sem sair da conversa, o cidadão consulta o andamento real do seu protocolo ou os chamados abertos em qualquer bairro diretamente na base Oracle FIAP (via *fast-path* por `#ID` e **ReAct Tool Calling** em JSON estruturado com `gpt-5-nano`).
 
 #### 2. Para a Gestão Pública (Subprefeituras & Concessionárias)
 - **Laudo Técnico com Enquadramento Legal Imediato:** Cada chamado submetido pelo app ou backend passa por triagem automatizada com citação da legislação municipal vigente (ex: Decreto nº 59.150/2019 para pavimentação; Decreto nº 57.545/2016 para drenagem).
@@ -129,7 +129,7 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
   [ MOTOR DE INFERÊNCIA MULTIMODAL & CONTINGÊNCIA DE REDE ]
   ┌─────────────────────────────────────────────────────────┐     ┌─────────────────────────────────────────────────────────┐
   │   PROVEDOR ÚNICO MULTIMODAL (AZURE AI FOUNDRY):         │     │   CONTINGÊNCIA NORMATIVA DE REDE:                       │
-  │   `phi-4-multimodal` (Phi-4-multimodal-instruct)        │ ──> │   DEGRADAÇÃO GRACIOSA SEM CRASH (HTTP 200)              │
+  │   `gpt-5-nano` (OpenAI / Azure AI Foundry)              │ ──> │   DEGRADAÇÃO GRACIOSA SEM CRASH (HTTP 200)              │
   │   • Visão Computacional de fotos (Base64 e BLOB Oracle) │     │   Inferência Normativa sobre RAG / PMSP                 │
   │   • ReAct Tool Calling + Structured JSON (Pydantic)     │     │   • Atua apenas em erro de rede, 429 ou bloqueio Jailbreak│
   └─────────────────────────────────────────────────────────┘     └─────────────────────────────────────────────────────────┘
@@ -151,7 +151,7 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 
 ## 🧠 5. Abordagem de IA Selecionada & Justificativa Técnica
 
-### Por que Azure AI Foundry (`phi-4-multimodal` + `embed-v-4-0`) + RAG Normativo?
+### Por que Azure AI Foundry (`gpt-5-nano` + `embed-v-4-0`) + RAG Normativo?
 
 Na administração pública e na segurança viária municipal, **alucinações de inteligência artificial são inaceitáveis**:
 - Um modelo de linguagem convencional sem ancoragem normativa poderia alucinar prazos irreais, citar leis revogadas ou enviar equipes da Subprefeitura para reparar adutoras de competência exclusiva da Sabesp ou cabos de média tensão sob concessão da ENEL.
@@ -160,7 +160,7 @@ Na administração pública e na segurança viária municipal, **alucinações d
 
 A arquitetura refatorada do **ZelaFix AI** resolve esse dilema através da integração de pilares técnicos objetivos:
 1. **RAG Normativo Fundamentado em Nuvem:** Toda resposta do ZelaBot e todo laudo de triagem técnica é ancorado em decretos, portarias e manuais vigentes da Cidade de São Paulo via embeddings densos reais (`embed-v-4-0`).
-2. **Modelo Multimodal Único (`phi-4-multimodal` no Azure AI Foundry):** Executa **chat cívico em JSON estruturado**, **triagem técnica**, **diagnóstico de bairros**, **visão computacional de imagens** (Base64 e BLOB Oracle) e **ReAct Tool Calling** usando o SDK oficial `openai` (API v1), sem troca/fallback entre múltiplos LLMs.
+2. **Modelo Multimodal Único (`gpt-5-nano` no Azure AI Foundry):** Executa **chat cívico em JSON estruturado**, **triagem técnica**, **diagnóstico de bairros**, **visão computacional de imagens** (Base64 e BLOB Oracle) e **ReAct Tool Calling** usando o SDK oficial `openai` (API v1), sem troca/fallback entre múltiplos LLMs.
 3. **Integração Real-Time com Banco Oracle FIAP (Modo Thin):** Consulta chamados reais, endereços, contagem de votos comunitários (+1 IoB) e fotos BLOB diretamente no Oracle (`oracle.fiap.com.br:1521/orcl`) em Python nativo (`SELECT` estrito).
 4. **Degradação Graciosa de Rede / Segurança:** Apenas em cenários extremos (bloqueio de segurança por Prompt Injection/Jailbreak, indisponibilidade externa de rede ou rajada de rate limit `429`), a camada de serviço garante resposta estruturada HTTP 200 segura apoiada nos chunks RAG sem derrubar o app mobile.
 5. **Proteção LGPD & Higienização Mobile:** Mascaramento automático de dados pessoais e formatação limpa para consumo do aplicativo React Native.
@@ -266,7 +266,7 @@ O microsserviço implementa camadas ativas de conformidade e tratamento de dados
     "Solicitar confirmação e apoios de outros vizinhos (+1)",
     "Acompanhar o prazo de execução via protocolo oficial"
   ],
-  "origem_resposta": "ZelaBot (Azure AI Foundry: phi-4-multimodal + embed-v-4-0)",
+  "origem_resposta": "ZelaBot (Azure AI Foundry: gpt-5-nano + embed-v-4-0)",
   "sessionId": "sess_cidadao_01",
   "sources_used": [
     {
@@ -313,7 +313,7 @@ O microsserviço implementa camadas ativas de conformidade e tratamento de dados
     "Compactar com rolo tandem vibratório para nivelamento perfeito"
   ],
   "analise_visual": "Cratera asfáltica profunda com bordas irregulares sobre a via.",
-  "origem_triagem": "ZelaFix AI Triagem Multimodal (Azure AI Foundry: phi-4-multimodal + embed-v-4-0)"
+  "origem_triagem": "ZelaFix AI Triagem Multimodal (Azure AI Foundry: gpt-5-nano + embed-v-4-0)"
 }
 ```
 
@@ -367,7 +367,7 @@ TOTAL GERAL: 82/82 TESTES APROVADOS — ZERO FALHAS DETECTADAS
   7. *Triagem de Saneamento Sabesp:* Vazamento de água com SLA 12h para estancar fuga hídrica.
   8. *Integridade Relacional no SQLite:* Auditoria e histórico persistidos sem deadlocks.
   9. *Telemetria e Conexão Oracle FIAP:* Status e conectividade em tempo real (somente leitura).
-  10. *Visão Computacional Multimodal (`phi-4-multimodal`):* Diagnóstico técnico sobre foto do dano urbano.
+  10. *Visão Computacional Multimodal (`gpt-5-nano`):* Diagnóstico técnico sobre foto do dano urbano.
   11. *Roteamento Real Oracle + Telemetria IoT:* Categoria `'Drenagem e Esgoto'` com sensor de bueiro sem colidir com Sabesp.
   12. *Memória Multi-Turno Automática + Insights Vivos:* Carregamento de sessão por `sessionId` no SQLite e insights alimentados pelo Oracle FIAP.
 
@@ -380,7 +380,7 @@ Submeteu a aplicação a condições extremas e cenários destrutivos:
 
 ### 10.4 Interpretação Crítica dos Resultados
 - **Precisão do RAG sem Alucinação Cruzada:** Os embeddings multilíngues `embed-v-4-0` (1536D) no ChromaDB com `RAG_MIN_SCORE = 0.28` e filtro estrito por categoria garantiram **37/37 (100.0%)** de recuperação normativa e **0 falsos positivos** em perguntas fora de escopo.
-- **Comportamento sob Sobrecarga Concorrente (`429`) e Bloqueio `Jailbreak`:** Rajadas de 50 requisições paralelas simultâneas contra a cota de tokens por minuto do deployment `phi-4-multimodal` ou tentativas de Prompt Injection bloqueadas pelo filtro de segurança do Azure acionam a contingência normativa local, garantindo código HTTP 200 e zero vazamento de dados sem derrubar o app mobile.
+- **Comportamento sob Sobrecarga Concorrente (`429`) e Bloqueio `Jailbreak`:** Rajadas de 50 requisições paralelas simultâneas contra a cota de tokens por minuto do deployment `gpt-5-nano` ou tentativas de Prompt Injection bloqueadas pelo filtro de segurança do Azure acionam a contingência normativa local, garantindo código HTTP 200 e zero vazamento de dados sem derrubar o app mobile.
 
 ---
 
@@ -393,7 +393,7 @@ Submeteu a aplicação a condições extremas e cenários destrutivos:
 
 ### 11.2 Limitações Transparentes da Inteligência Artificial
 1. **Oclusão em Vistorias Subterrâneas Profundas:** A triagem computacional baseada em relatos textuais e fotos de superfície não substitui a inspeção física por CFTV em galerias pluviais profundas ou adutoras enterradas.
-2. **Qualidade Visual e Iluminação Noturna das Fotos:** Imagens tremidas, muito escuras ou genéricas podem limitar o laudo multimodal do `phi-4-multimodal`, levando o sistema a se apoiar no texto do relato e nos dados do Oracle.
+2. **Qualidade Visual e Iluminação Noturna das Fotos:** Imagens tremidas, muito escuras ou genéricas podem limitar o laudo multimodal do `gpt-5-nano`, levando o sistema a se apoiar no texto do relato e nos dados do Oracle.
 3. **Limites de Taxa por Minuto e Papel Consultivo:** A cota de TPM do recurso no Azure AI Foundry pode exigir controle sob rajadas extremas (cobertas por contingência normativa HTTP 200), e todo laudo gerado atua como apoio técnico consultivo à decisão do engenheiro/servidor municipal.
 
 ---
@@ -449,7 +449,7 @@ Disruptive-Architectures-IoT-IoB-IA/
     │   │   ├── triagem_service.py      # Emissor do laudo técnico multimodal e invariantes IoB/RAG
     │   │   ├── insights_service.py     # Diagnóstico preventivo por bairro via Foundry + Oracle
     │   │   ├── knowledge_service.py    # Indexação SHA-256 e busca semântica 1536D (`embed-v-4-0`)
-    │   │   ├── foundry_service.py      # Cliente Azure AI Foundry (`openai` SDK: `phi-4-multimodal` + `embed-v-4-0`)
+    │   │   ├── foundry_service.py      # Cliente Azure AI Foundry (`openai` SDK: `gpt-5-nano` + `embed-v-4-0`)
     │   │   ├── chamado_oracle_service.py # Tools e contexto Oracle FIAP (somente SELECT)
     │   │   └── __init__.py
     │   └── utils/
@@ -475,7 +475,7 @@ Crie o arquivo `.env` em `deploy_zelafixai_render/` a partir do `.env.example` (
 ```env
 AI_BASE_URL=https://seu-recurso-foundry.services.ai.azure.com/openai/v1
 AI_API_KEY=sua_chave_azure_ai_foundry_aqui
-AI_MODEL=phi-4-multimodal
+AI_MODEL=gpt-5-nano
 AI_EMBEDDING_MODEL=embed-v-4-0
 AI_EMBEDDING_DIMENSIONS=1536
 AI_TIMEOUT_SECONDS=25.0
