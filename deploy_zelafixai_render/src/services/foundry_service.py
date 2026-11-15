@@ -68,8 +68,8 @@ def _extrair_json_bruto(texto: str) -> Optional[Dict[str, Any]]:
 class FoundryService:
     """
     Cliente thread-safe para o Azure AI Foundry:
-    - Embeddings semânticos densos em nuvem (`embed-v-4-0`, 1536D) com cache LRU em memória.
-    - Chat multimodal + Tool Calling nativo + Structured JSON Outputs via `AI_MODEL` (`phi-4-multimodal`).
+    - Embeddings semânticos densos em nuvem (1536D) com cache LRU em memória via `AI_EMBEDDING_MODEL`.
+    - Chat multimodal + Tool Calling nativo + Structured JSON Outputs via modelo configurado em `AI_MODEL`.
     """
 
     MAX_HISTORICO_TURNOS = 6
