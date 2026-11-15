@@ -65,7 +65,7 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 #### 1. Para o Cidadão (Munícipe)
 - **Orientação Cívica e Direitos em Linguagem Clara:** Através do assistente inteligente **ZelaBot**, o cidadão tira dúvidas imediatas sobre o que pode descartar gratuitamente nos Ecopontos (até 1 m³/dia pela Lei nº 13.478/2002), responsabilidade sobre calçadas (Decreto nº 58.611/2019) e prazos legais da Carta de Serviços PMSP.
 - **Engajamento Comunitário (Internet dos Comportamentos - IoB):** Com o botão de apoio comunitário (**+1**), os munícipes corroboram a criticidade do chamado da sua rua, elevando a prioridade do atendimento perante a administração pública.
-- **Acompanhamento Real de Protocolos e Bairros:** Sem sair da conversa, o cidadão consulta o andamento real do seu protocolo ou os chamados abertos em qualquer bairro diretamente na base Oracle FIAP (via *fast-path* por `#ID` e **ReAct Tool Calling** em JSON estruturado via modelo multimodal no Azure AI Foundry).
+- **Acompanhamento Real de Protocolos e Bairros:** Sem sair da conversa, o cidadão consulta o andamento real do seu protocolo ou os chamados abertos em qualquer bairro diretamente na base Oracle FIAP (via *fast-path* por `#ID` e **ReAct Tool Calling** em JSON estruturado via modelo multimodal configurado no provedor de IA).
 
 #### 2. Para a Gestão Pública (Subprefeituras & Concessionárias)
 - **Laudo Técnico com Enquadramento Legal Imediato:** Cada chamado submetido pelo app ou backend passa por triagem automatizada com citação da legislação municipal vigente (ex: Decreto nº 59.150/2019 para pavimentação; Decreto nº 57.545/2016 para drenagem).
@@ -111,11 +111,11 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
   [ NÚCLEO DE IA GENERATIVA, TOOL CALLING & RAG NORMATIVO MUNICIPAL ]
   ┌───────────────────────────────────────────────────────────────────────────────────────────────┐
   │ 1. HIGIENIZAÇÃO & PROTEÇÃO DE DADOS (LGPD) NA ENTRADA E NA SAÍDA                              │
-  │    ├─ Proteção LGPD (Mascaramento de CPFs e cartões antes de Foundry, Oracle e SQLite)        │
+  │    ├─ Proteção LGPD (Mascaramento de CPFs e cartões antes de Provedor de IA, Oracle e SQLite) │
   │    └─ Sanitizador Mobile Clean (Remove pipes '|', <think> e Markdown bruto para o App)        │
   ├───────────────────────────────────────────────────────────────────────────────────────────────┤
   │ 2. PIPELINE DE RECUPERAÇÃO SEMÂNTICA EM NUVEM (RAG MUNICIPAL 1536D)                           │
-  │    ├─ Azure AI Foundry Embeddings: 1536D (via `AI_EMBEDDING_MODEL`, cache LRU + SHA-256)      │
+  │    ├─ Embeddings Vetoriais em Nuvem: 1536D (via `AI_EMBEDDING_MODEL`, cache LRU + SHA-256)    │
   │    └─ ChromaDB (`zelafix_knowledge_foundry_1536d`): HNSW Cosine Similarity com Top-K e corte  │
   ├───────────────────────────────────────────────────────────────────────────────────────────────┤
   │ 3. ORQUESTRAÇÃO DE CONTEXTO, IOT & TOOL CALLING ORACLE (SOMENTE LEITURA)                      │
@@ -128,7 +128,7 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 ====================================================================================================
   [ MOTOR DE INFERÊNCIA MULTIMODAL & CONTINGÊNCIA DE REDE ]
   ┌─────────────────────────────────────────────────────────┐     ┌─────────────────────────────────────────────────────────┐
-  │   PROVEDOR ÚNICO MULTIMODAL (AZURE AI FOUNDRY):         │     │   CONTINGÊNCIA NORMATIVA DE REDE:                       │
+  │   PROVEDOR ÚNICO MULTIMODAL (OPENAI API STANDARD):      │     │   CONTINGÊNCIA NORMATIVA DE REDE:                       │
   │   LLM Multimodal (OpenAI v1 via `AI_MODEL`)             │ ──> │   DEGRADAÇÃO GRACIOSA SEM CRASH (HTTP 200)              │
   │   • Visão Computacional de fotos (Base64 e BLOB Oracle) │     │   Inferência Normativa sobre RAG / PMSP                 │
   │   • ReAct Tool Calling + Structured JSON (Pydantic)     │     │   • Atua apenas em erro de rede, 429 ou bloqueio de safe│
@@ -151,7 +151,7 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 
 ## 🧠 5. Abordagem de IA Selecionada & Justificativa Técnica
 
-### Por que Azure AI Foundry (LLM Multimodal + Embeddings 1536D) + RAG Normativo?
+### Por que Provedor de LLM Multimodal (Embeddings 1536D) + RAG Normativo?
 
 Na administração pública e na segurança viária municipal, **alucinações de inteligência artificial são inaceitáveis**:
 - Um modelo de linguagem convencional sem ancoragem normativa poderia alucinar prazos irreais, citar leis revogadas ou enviar equipes da Subprefeitura para reparar adutoras de competência exclusiva da Sabesp ou cabos de média tensão sob concessão da ENEL.
@@ -160,7 +160,7 @@ Na administração pública e na segurança viária municipal, **alucinações d
 
 A arquitetura refatorada do **ZelaFix AI** resolve esse dilema através da integração de pilares técnicos objetivos:
 1. **RAG Normativo Fundamentado em Nuvem:** Toda resposta do ZelaBot e todo laudo de triagem técnica é ancorado em decretos, portarias e manuais vigentes da Cidade de São Paulo via embeddings densos reais (configuráveis via `AI_EMBEDDING_MODEL`).
-2. **Modelo Multimodal Único no Azure AI Foundry:** Executa **chat cívico em JSON estruturado**, **triagem técnica**, **diagnóstico de bairros**, **visão computacional de imagens** (Base64 e BLOB Oracle) e **ReAct Tool Calling** usando o SDK oficial `openai` (API v1 com modelo configurado via `AI_MODEL`), sem troca/fallback entre múltiplos LLMs.
+2. **Modelo Multimodal Único via OpenAI API Standard:** Executa **chat cívico em JSON estruturado**, **triagem técnica**, **diagnóstico de bairros**, **visão computacional de imagens** (Base64 e BLOB Oracle) e **ReAct Tool Calling** usando o SDK oficial `openai` (API v1 com modelo configurado via `AI_MODEL`), sem troca/fallback entre múltiplos LLMs.
 3. **Integração Real-Time com Banco Oracle FIAP (Modo Thin):** Consulta chamados reais, endereços, contagem de votos comunitários (+1 IoB) e fotos BLOB diretamente no Oracle (`oracle.fiap.com.br:1521/orcl`) em Python nativo (`SELECT` estrito).
 4. **Degradação Graciosa de Rede / Segurança:** Apenas em cenários extremos (bloqueio de segurança por Prompt Injection/Jailbreak, indisponibilidade externa de rede ou rajada de rate limit `429`), a camada de serviço garante resposta estruturada HTTP 200 segura apoiada nos chunks RAG sem derrubar o app mobile.
 5. **Proteção LGPD & Higienização Mobile:** Mascaramento automático de dados pessoais e formatação limpa para consumo do aplicativo React Native.
@@ -266,7 +266,7 @@ O microsserviço implementa camadas ativas de conformidade e tratamento de dados
     "Solicitar confirmação e apoios de outros vizinhos (+1)",
     "Acompanhar o prazo de execução via protocolo oficial"
   ],
-  "origem_resposta": "ZelaBot (Azure AI Foundry / OpenAI v1)",
+  "origem_resposta": "ZelaBot (IA Multimodal / OpenAI API Standard)",
   "sessionId": "sess_cidadao_01",
   "sources_used": [
     {
@@ -313,7 +313,7 @@ O microsserviço implementa camadas ativas de conformidade e tratamento de dados
     "Compactar com rolo tandem vibratório para nivelamento perfeito"
   ],
   "analise_visual": "Cratera asfáltica profunda com bordas irregulares sobre a via.",
-  "origem_triagem": "ZelaFix AI Triagem Multimodal (Azure AI Foundry / OpenAI v1)"
+  "origem_triagem": "ZelaFix AI Triagem Multimodal (IA Multimodal / OpenAI API Standard)"
 }
 ```
 
@@ -379,12 +379,12 @@ TOTAL GERAL: 49/49 TESTES AUTOMATIZADOS APROVADOS — 100% DE SUCESSO
 ### 11.1 Proteção de Dados Pessoais (LGPD) e Credenciais
 - Nenhuma chave de API ou credencial Oracle está versionada no repositório. O arquivo [`.env.example`](./deploy_zelafixai_render/.env.example) contém apenas os nomes das variáveis modelo.
 - O acesso ao banco Oracle FIAP ocorre em **modo estritamente somente leitura (`SELECT`)** com bind variables e timeouts curtos.
-- Números de CPF e cartão eventualmente digitados são mascarados **na entrada** (antes do envio ao Azure AI Foundry, ao Oracle ou à gravação no SQLite) e **na saída** via `sanitizar_lgpd`.
+- Números de CPF e cartão eventualmente digitados são mascarados **na entrada** (antes do envio ao Provedor de IA, ao Oracle ou à gravação no SQLite) e **na saída** via `sanitizar_lgpd`.
 
 ### 11.2 Limitações Transparentes da Inteligência Artificial
 1. **Oclusão em Vistorias Subterrâneas Profundas:** A triagem computacional baseada em relatos textuais e fotos de superfície não substitui a inspeção física por CFTV em galerias pluviais profundas ou adutoras enterradas.
 2. **Qualidade Visual e Iluminação Noturna das Fotos:** Imagens tremidas, muito escuras ou genéricas podem limitar o laudo multimodal do modelo de visão, levando o sistema a se apoiar no texto do relato e nos dados do Oracle.
-3. **Limites de Taxa por Minuto e Papel Consultivo:** A cota de TPM do recurso no Azure AI Foundry pode exigir controle sob rajadas extremas (cobertas por contingência normativa HTTP 200), e todo laudo gerado atua como apoio técnico consultivo à decisão do engenheiro/servidor municipal.
+3. **Limites de Taxa por Minuto e Papel Consultivo:** A cota de TPM do recurso no provedor de IA pode exigir controle sob rajadas extremas (cobertas por contingência normativa HTTP 200), e todo laudo gerado atua como apoio técnico consultivo à decisão do engenheiro/servidor municipal.
 
 ---
 
@@ -404,7 +404,7 @@ Disruptive-Architectures-IoT-IoB-IA/
     │   └── chroma/                     # ChromaDB com coleção vetorial HNSW (1536D)
     ├── src/
     │   ├── core/
-    │   │   ├── config.py               # Variáveis de ambiente, Oracle e Azure AI Foundry
+    │   │   ├── config.py               # Variáveis de ambiente, Oracle e Provedor de IA
     │   │   ├── prompts.py              # System Prompts estruturados (ZelaBot, Triagem e Insights)
     │   │   └── __init__.py
     │   ├── database/
@@ -437,9 +437,9 @@ Disruptive-Architectures-IoT-IoB-IA/
     │   ├── services/
     │   │   ├── chat_service.py         # Orquestrador do ZelaBot (RAG + ReAct Tool Calling + Pydantic JSON)
     │   │   ├── triagem_service.py      # Emissor do laudo técnico multimodal e invariantes IoB/RAG
-    │   │   ├── insights_service.py     # Diagnóstico preventivo por bairro via Foundry + Oracle
+    │   │   ├── insights_service.py     # Diagnóstico preventivo por bairro via IA + Oracle
     │   │   ├── knowledge_service.py    # Indexação SHA-256 e busca semântica 1536D (via `AI_EMBEDDING_MODEL`)
-    │   │   ├── foundry_service.py      # Cliente Azure AI Foundry (`openai` SDK v1 via `AI_MODEL`)
+    │   │   ├── foundry_service.py      # Cliente de IA (`openai` SDK v1 via `AI_MODEL`)
     │   │   ├── chamado_oracle_service.py # Tools e contexto Oracle FIAP (somente SELECT)
     │   │   └── __init__.py
     │   └── utils/
@@ -462,10 +462,10 @@ Disruptive-Architectures-IoT-IoB-IA/
 ### Variáveis de Ambiente (`.env`)
 Crie o arquivo `.env` em `deploy_zelafixai_render/` a partir do `.env.example` (não versionado):
 ```env
-AI_BASE_URL=https://seu-recurso-foundry.services.ai.azure.com/openai/v1
-AI_API_KEY=sua_chave_azure_ai_foundry_aqui
-AI_MODEL=nome_do_deployment_multimodal
-AI_EMBEDDING_MODEL=nome_do_deployment_embeddings
+AI_BASE_URL=https://seu-provedor-de-ia.com/openai/v1
+AI_API_KEY=sua_chave_de_api_aqui
+AI_MODEL=nome_do_modelo_multimodal
+AI_EMBEDDING_MODEL=nome_do_modelo_embeddings
 AI_EMBEDDING_DIMENSIONS=1536
 AI_TIMEOUT_SECONDS=25.0
 PORT=8000

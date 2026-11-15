@@ -18,7 +18,7 @@ health_router = APIRouter(tags=["Health"])
 @health_router.get("/")
 @health_router.get("/health")
 def health_check() -> Dict[str, Any]:
-    """Retorna o status operacional do microsserviço e modelos ativos no Azure AI Foundry."""
+    """Retorna o status operacional do microsserviço e modelos ativos no Provedor de IA."""
     return {
         "status": "healthy",
         "service": APP_TITLE,
@@ -26,7 +26,7 @@ def health_check() -> Dict[str, Any]:
         "model": AI_MODEL,
         "embedding_model": AI_EMBEDDING_MODEL,
         "database_oracle": "Oracle Thin Client (FIAP — somente leitura)",
-        "framework": "FastAPI + Azure AI Foundry + ChromaDB",
+        "framework": "FastAPI + LLM Multimodal + ChromaDB",
         "version": APP_VERSION,
     }
 

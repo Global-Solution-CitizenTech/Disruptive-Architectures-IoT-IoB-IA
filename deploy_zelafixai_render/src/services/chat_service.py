@@ -33,7 +33,7 @@ class ChatService:
     """
     Orquestrador conversacional do ZelaBot:
     - Proteção LGPD na entrada e na saída.
-    - RAG semântico em nuvem (ChromaDB + Azure AI Foundry Embeddings).
+    - RAG semântico em nuvem (ChromaDB + Embeddings 1536D).
     - Tool Calling nativo para consultas Oracle FIAP (`SELECT` somente leitura) e SLA.
     - Saída estruturada validada via Pydantic + sanitização Mobile Clean.
     """
@@ -112,7 +112,7 @@ class ChatService:
                 chamado_id = dados_oracle["id"]
                 bairro = dados_oracle["bairro"]
 
-            # 3. Recuperação Semântica RAG (Azure AI Foundry Embeddings + ChromaDB)
+            # 3. Recuperação Semântica RAG (Embeddings 1536D + ChromaDB)
             resultado_rag = KnowledgeService.buscar_chunks_rag(pergunta_segura, top_k=3)
             chunks_recuperados = resultado_rag["chunks"]
             match_found = resultado_rag["match_found"]
@@ -134,7 +134,7 @@ class ChatService:
                 or (dados_oracle.get("foto_bytes") if dados_oracle else None)
             )
 
-            # 4. Inferência Estruturada + Tool Calling no Azure AI Foundry
+            # 4. Inferência Estruturada + Tool Calling no Provedor de IA
             prompt_fundamentado = formatar_prompt_rag(
                 pergunta=pergunta_segura,
                 contexto_chamado_str=contexto_chamado_str,
@@ -158,7 +158,7 @@ class ChatService:
             )
 
             if ia_result is not None:
-                origem_ia = f"ZelaBot (Azure AI Foundry: {modelo_usado} + {AI_EMBEDDING_MODEL})"
+                origem_ia = f"ZelaBot (IA Multimodal: {modelo_usado} + {AI_EMBEDDING_MODEL})"
             else:
                 ia_result = cls._fallback_contingencia(chunks_recuperados, contexto_chamado_str)
                 origem_ia = "ZelaBot (Contingência Normativa Local)"

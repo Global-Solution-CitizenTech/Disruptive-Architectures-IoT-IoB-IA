@@ -4,7 +4,7 @@
 > **Disciplina:** Disruptive Architectures: IoT, IoB & Generative IA (FIAP — 2TDSPG)  
 > **Núcleo de Produção:** Microsserviço FastAPI em Produção no Render ([`deploy_zelafixai_render`](./deploy_zelafixai_render))  
 > **Banco de Dados Oficial:** Oracle Database FIAP (`oracle.fiap.com.br:1521/orcl` — Modo Thin, somente leitura `SELECT`)  
-> **Provedor de IA:** Azure AI Foundry / Azure OpenAI (LLM Multimodal via `AI_MODEL` + Embeddings 1536D via `AI_EMBEDDING_MODEL`)  
+> **Provedor de IA:** Provedor de LLM Multimodal (OpenAI API Standard via `AI_BASE_URL` + `AI_MODEL` + Embeddings 1536D via `AI_EMBEDDING_MODEL`)  
 
 ---
 
@@ -13,7 +13,7 @@
 O **ZelaFix AI** é o motor de inteligência artificial generativa multimodal e inteligência comportamental (IoB) da plataforma CitizenTech **ZelaFix**. Desenvolvido com foco no **ODS 11 da ONU (Cidades e Comunidades Sustentáveis)**, o agente atua entre os munícipes da Cidade de São Paulo e os órgãos públicos municipais:
 
 1. **Atendimento Cívico Especializado (ZelaBot):** Orienta munícipes sobre direitos, prazos regulamentares (SLAs) e procedimentos municipais fundamentados na legislação paulistana via RAG semântico em nuvem (Embeddings 1536D via `AI_EMBEDDING_MODEL`).
-2. **Visão Computacional Multimodal (Azure AI Foundry / OpenAI v1 via `AI_MODEL`):** Analisa fotografias enviadas pelos cidadãos (ou recuperadas do Oracle sob demanda), identificando danos urbanos e emitindo parecer técnico em formato estruturado (Pydantic JSON).
+2. **Visão Computacional Multimodal (OpenAI API Standard via `AI_MODEL`):** Analisa fotografias enviadas pelos cidadãos (ou recuperadas do Oracle sob demanda), identificando danos urbanos e emitindo parecer técnico em formato estruturado (Pydantic JSON).
 3. **Triagem Automática e Enquadramento Normativo:** Classifica prioridade (`BAIXA`, `MEDIA`, `ALTA`, `URGENTE`), órgão responsável, SLA regulamentar, enquadramento legal e checklist técnico de vistoria via Structured Outputs — sem matrizes rígidas de palavras-chave manuais.
 4. **Internet of Behaviors (IoB) & IoT:** Incorpora confirmações comunitárias (`+1` >= 25 apoios) e anomalias de sensores urbanos para elevar automaticamente a prioridade mínima da ocorrência para `ALTA` / `URGENTE`.
 5. **Integração Somente Leitura com Oracle FIAP:** Consulta chamados, histórico, votos e resumo de bairros via `oracledb` em Modo Thin (`SELECT` estrito) tanto por *fast-path* (`#ID`) quanto via **Tool Calling** nativo (`consultar_chamados_oracle`, `calcular_prazo_sla`).
@@ -24,22 +24,22 @@ O **ZelaFix AI** é o motor de inteligência artificial generativa multimodal e 
 
 ```text
  ┌────────────────────────────────────────────────────────────────────────┐
- │                   📱 APLICATIVO MOBILE (REACT NATIVE)                  │
+ │                      APLICATIVO MOBILE (REACT NATIVE)                  │
  │      Foto do dano urbano + Relato cívico + Localização + Votos (+1)    │
  └───────────────────────────────────┬────────────────────────────────────┘
                                      │ POST /ai/chat | /ai/triagem | /ai/insights
                                      ▼
  ┌────────────────────────────────────────────────────────────────────────┐
- │                ⚡ FASTAPI CONTROLLER (ROUTER /AI)                      │
+ │                   FASTAPI CONTROLLER (ROUTER /AI)                      │
  │  1. Validação de Schema Pydantic (ChatRequest / TriagemRequest)        │
  │  2. Proteção LGPD na entrada (mascaramento de CPF e cartão)            │
  └───────────────────┬───────────────────────────────┬────────────────────┘
                      │                               │
     (Tool Call / Fast-Path #ID)                      ▼
                      │            ┌───────────────────────────────────────┐
-                     ▼            │ 🔍 RAG SEMÂNTICO EM NUVEM (CHROMA DB) │
+                     ▼            │    RAG SEMÂNTICO EM NUVEM (CHROMA DB) │
  ┌─────────────────────────────┐  │  • Embeddings: 1536D em Nuvem         │
- │  🏛️ ORACLE FIAP (MODO THIN) │  │  • ChromaDB Persistente (HNSW Cosine) │
+ │   ORACLE FIAP (MODO THIN)   │  │  • ChromaDB Persistente (HNSW Cosine) │
  │  • Somente leitura (SELECT) │  │  • Fingerprint SHA-256 (0 reindexação │
  │  • Protocolo, Status, Votos │  │    desnecessária entre restarts)      │
  │  • BLOB de Foto sob demanda │  │  • 31 Chunks Decretos PMSP (Top-K)    │
@@ -48,15 +48,15 @@ O **ZelaFix AI** é o motor de inteligência artificial generativa multimodal e 
                └─────────────────┬───────────────────┘
                                  ▼
  ┌────────────────────────────────────────────────────────────────────────┐
- │           🚀 AZURE AI FOUNDRY (`openai` SDK /OpenAI v1)                │
- │  • Modelo Único: Multimodal LLM via AI_MODEL (Visão + Tool Calling)   │
+ │       PROVEDOR DE IA MULTIMODAL (`openai` SDK / OpenAI API Standard)   │
+ │  • Modelo Único: Multimodal LLM via AI_MODEL (Visão + Tool Calling)    │
  │  • Sem fallback para outro modelo LLM                                  │
  │  • Structured Output validado via Pydantic                             │
  └───────────────────────────────────┬────────────────────────────────────┘
                                      │
                                      ▼
  ┌────────────────────────────────────────────────────────────────────────┐
- │        🧹 HIGIENIZAÇÃO MOBILE CLEAN & AUDITORIA RELACIONAL             │
+ │           HIGIENIZAÇÃO MOBILE CLEAN & AUDITORIA RELACIONAL             │
  │  • Remoção de markdown/tabelas com pipes (`|`) para tela Mobile        │
  │  • Mascaramento LGPD na saída + Persistência SQLite (histórico/audit)  │
  └────────────────────────────────────────────────────────────────────────┘

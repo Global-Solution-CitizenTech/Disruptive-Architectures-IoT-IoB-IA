@@ -1,6 +1,6 @@
 """
 Serviço Unificado de IA Generativa, Visão Computacional, Tool Calling e Embeddings
-via Azure AI Foundry (API OpenAI-compatible v1) — ZelaFix AI
+via Provedor de IA (API OpenAI-compatible Standard v1) — ZelaFix AI
 Global Solution 2 — Disruptive Architectures: IoT, IoB & Generative IA (FIAP 2TDSPG)
 """
 import io
@@ -67,7 +67,7 @@ def _extrair_json_bruto(texto: str) -> Optional[Dict[str, Any]]:
 
 class FoundryService:
     """
-    Cliente thread-safe para o Azure AI Foundry:
+    Cliente thread-safe para o Provedor de IA:
     - Embeddings semânticos densos em nuvem (1536D) com cache LRU em memória via `AI_EMBEDDING_MODEL`.
     - Chat multimodal + Tool Calling nativo + Structured JSON Outputs via modelo configurado em `AI_MODEL`.
     """
@@ -128,12 +128,12 @@ class FoundryService:
 
             return base64.b64encode(dados).decode("utf-8")
         except Exception as err:
-            logger.warning(f"Imagem inválida ignorada antes do envio ao Foundry: {err}")
+            logger.warning(f"Imagem inválida ignorada antes do envio ao Provedor de IA: {err}")
             return None
 
     @classmethod
     def gerar_embeddings(cls, textos: List[str]) -> Optional[List[List[float]]]:
-        """Gera embeddings normalizados em lote via Azure AI Foundry com cache LRU."""
+        """Gera embeddings normalizados em lote via Provedor de IA com cache LRU."""
         if not textos:
             return []
 
@@ -168,7 +168,7 @@ class FoundryService:
                         if len(cls._embedding_cache) > cls._MAX_CACHE_EMBEDDINGS:
                             cls._embedding_cache.popitem(last=False)
             except Exception as err:
-                logger.error(f"Erro ao gerar embeddings no Foundry ({emb_model}): {err}")
+                logger.error(f"Erro ao gerar embeddings no Provedor de IA ({emb_model}): {err}")
                 return None
 
         return [v for v in resultados if v is not None]
@@ -323,7 +323,7 @@ class FoundryService:
             if conteudo:
                 return conteudo, modelo
         except Exception as err:
-            logger.warning(f"Falha no modelo '{modelo}' do Azure AI Foundry: {err}")
+            logger.warning(f"Falha no modelo '{modelo}' do Provedor de IA: {err}")
 
         return None, None
 

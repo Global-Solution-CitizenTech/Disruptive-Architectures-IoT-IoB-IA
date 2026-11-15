@@ -14,19 +14,19 @@ load_dotenv(_dir_deploy.parent / ".env")
 
 APP_TITLE = "ZelaFix AI — Microsserviço de Inteligência Artificial e Triagem Urbana"
 APP_DESCRIPTION = (
-    "API de IA Generativa Multimodal, Embeddings Semânticos em Nuvem (Azure AI Foundry), "
+    "API de IA Generativa Multimodal, Embeddings Semânticos em Nuvem, "
     "RAG Normativo Municipal (PMSP), Integração Oracle FIAP (somente leitura) e Triagem Urbana ZelaFix."
 )
 APP_VERSION = "3.0.0"
 
-# Azure AI Foundry (API OpenAI-compatible v1)
+# Provedor de IA (API OpenAI-compatible Standard v1)
 AI_BASE_URL = os.environ.get("AI_BASE_URL", "").strip()
 AI_API_KEY = os.environ.get("AI_API_KEY", "").strip()
-AI_MODEL = os.environ.get("AI_MODEL", "gpt-5-nano").strip()
-AI_EMBEDDING_MODEL = os.environ.get("AI_EMBEDDING_MODEL", "embed-v-4-0").strip()
+AI_MODEL = os.environ.get("AI_MODEL", "model-multimodal").strip()
+AI_EMBEDDING_MODEL = os.environ.get("AI_EMBEDDING_MODEL", "model-embeddings").strip()
 AI_EMBEDDING_DIMENSIONS = int(os.environ.get("AI_EMBEDDING_DIMENSIONS", "1536"))
 AI_TIMEOUT_SECONDS = float(os.environ.get("AI_TIMEOUT_SECONDS", "25.0"))
-AI_PROVIDER = "azure-ai-foundry"
+AI_PROVIDER = os.environ.get("AI_PROVIDER", "openai-compatible").strip()
 
 # Oracle FIAP (somente leitura SELECT via variáveis de ambiente)
 ORACLE_USER = os.environ.get("ORACLE_USER", "").strip()

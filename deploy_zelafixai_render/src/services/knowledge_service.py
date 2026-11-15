@@ -1,5 +1,5 @@
 """
-Serviço de Conhecimento RAG com Embeddings Semânticos em Nuvem (Azure AI Foundry) — ZelaFix AI
+Serviço de Conhecimento RAG com Embeddings Semânticos em Nuvem — ZelaFix AI
 Global Solution 2 — Disruptive Architectures: IoT, IoB & Generative IA (FIAP 2TDSPG)
 """
 import logging
@@ -51,7 +51,7 @@ class KnowledgeService:
                     logger.info(f"RAG aquecido do ChromaDB em disco ({len(em_disco)} chunks, 0 chamadas de API).")
                     return
 
-            # 2. Caso base nova ou container limpo, gera embeddings em lote no Azure AI Foundry
+            # 2. Caso base nova ou container limpo, gera embeddings em lote no Provedor de IA
             textos = [_texto_indexacao_chunk(c) for c in cls._chunks_indexados]
             vetores = FoundryService.gerar_embeddings(textos)
             if vetores and len(vetores) == len(cls._chunks_indexados):
@@ -61,7 +61,7 @@ class KnowledgeService:
                 cls._indice_inicializado = True
                 return
 
-            logger.warning("Azure AI Foundry indisponível para indexação inicial; fallback offline habilitado.")
+            logger.warning("Provedor de IA indisponível para indexação inicial; fallback offline habilitado.")
             cls._indice_inicializado = True
 
     @classmethod
@@ -131,7 +131,7 @@ class KnowledgeService:
                 return {"match_found": True, "chunks": resultados}
             return {"match_found": False, "chunks": []}
 
-        # 2. Fallback em memória com vetores do Foundry caso ChromaDB não esteja montado
+        # 2. Fallback em memória com vetores calculados caso ChromaDB não esteja montado
         if cls._embeddings_por_id:
             scores = []
             for c in cls._chunks_indexados:

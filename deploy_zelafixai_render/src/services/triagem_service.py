@@ -46,7 +46,7 @@ class TriagemService:
     """
     Motor de Triagem Urbana da ZelaFix:
     - Enriquece opcionalmente com Oracle FIAP (`SELECT` somente leitura).
-    - Recupera legislação municipal via RAG Semântico (Azure AI Foundry Embeddings).
+    - Recupera legislação municipal via RAG Semântico (Embeddings 1536D).
     - Emite laudo técnico estruturado (Structured Output + Visão Computacional).
     - Aplica invariantes IoB (+1 >= 25 apoios), telemetria IoT e limite de 150 chars.
     """
@@ -142,11 +142,11 @@ class TriagemService:
                     f"{telemetria.unidade or ''} | Anomalia na borda: {'SIM' if anomalia_iot else 'NÃO'}"
                 ).strip()
 
-            # 1. RAG Semântico (Azure AI Foundry Embeddings + ChromaDB)
+            # 1. RAG Semântico (Embeddings 1536D + ChromaDB)
             texto_busca = f"{categoria_raw} {titulo_raw} {descricao_raw}".strip()
             chunks = KnowledgeService.buscar_chunks_rag(texto_busca, top_k=3).get("chunks", [])
 
-            # 2. Inferência Estruturada Multimodal via Azure AI Foundry
+            # 2. Inferência Estruturada Multimodal via Provedor de IA
             foto_input = chamado.foto_base64 or (dados_oracle.get("foto_bytes") if dados_oracle else None)
             prompt_triagem = formatar_prompt_triagem(
                 categoria=categoria_raw,
@@ -167,7 +167,7 @@ class TriagemService:
             )
 
             if laudo is not None:
-                origem_triagem = f"ZelaFix AI Triagem Multimodal (Azure AI Foundry: {modelo_usado} + {AI_EMBEDDING_MODEL})"
+                origem_triagem = f"ZelaFix AI Triagem Multimodal (IA Multimodal: {modelo_usado} + {AI_EMBEDDING_MODEL})"
             else:
                 laudo = cls._fallback_contingencia(categoria_raw, apoios, anomalia_iot, chunks)
                 origem_triagem = "ZelaFix AI Triagem (Contingência Normativa)"

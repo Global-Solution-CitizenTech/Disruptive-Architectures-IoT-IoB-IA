@@ -29,7 +29,7 @@ class _InsightsIaSchema(BaseModel):
 class InsightsService:
     """
     Combina consultas em tempo real ao Oracle FIAP (somente SELECT), auditorias SQLite
-    e RAG normativo PMSP para sintetizar alertas comunitários via Azure AI Foundry.
+    e RAG normativo PMSP para sintetizar alertas comunitários via Provedor de IA.
     """
 
     @classmethod

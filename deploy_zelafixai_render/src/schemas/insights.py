@@ -19,7 +19,7 @@ class TriagemResponse(BaseModel):
     risco_potencial: str = Field(..., description="Avaliação do impacto físico e risco à segurança coletiva")
     checklist_vistoria: List[str] = Field(default_factory=list, description="Checklist de ações técnicas recomendadas para a vistoria de campo")
     analise_visual: Optional[str] = Field(default=None, description="Laudo da visão computacional multimodal da fotografia do dano urbano")
-    origem_triagem: str = Field(default="ZelaFix AI Triagem Multimodal (Foundry + RAG)", description="Mecanismo que emitiu o laudo")
+    origem_triagem: str = Field(default="ZelaFix AI Triagem Multimodal (IA Multimodal + RAG)", description="Mecanismo que emitiu o laudo")
 
 class InsightItem(BaseModel):
     categoria: str = Field(..., description="Eixo do alerta: 'pavimentacao', 'drenagem', 'iluminacao', 'limpeza_urbana', 'seguranca'")

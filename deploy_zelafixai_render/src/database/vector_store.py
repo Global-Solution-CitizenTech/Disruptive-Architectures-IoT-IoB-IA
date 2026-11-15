@@ -1,6 +1,6 @@
 """
 Módulo de Banco de Dados Vetorial ChromaDB — ZelaFix AI
-Persistência vetorial em disco (./data/chroma) com embeddings densos em nuvem (Azure AI Foundry).
+Persistência vetorial em disco (./data/chroma) com embeddings densos em nuvem (1536D).
 Global Solution 2 — Disruptive Architectures: IoT, IoB & Generative IA (FIAP 2TDSPG)
 """
 import os

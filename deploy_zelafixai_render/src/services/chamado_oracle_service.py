@@ -82,7 +82,7 @@ TOOLS_ZELAFIX = [
 class ChamadoOracleService:
     """
     Orquestra consultas somente leitura (`SELECT`) ao Oracle FIAP via fast-path
-    por ID ou via Tool Calling nativo no Azure AI Foundry.
+    por ID ou via Tool Calling nativo no Provedor de IA.
     """
 
     @staticmethod
