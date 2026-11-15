@@ -11,7 +11,7 @@ from src.core.config import AI_EMBEDDING_MODEL
 from src.core.prompts import SYSTEM_TRIAGEM, formatar_prompt_triagem
 from src.schemas.insights import TriagemRequest, TriagemResponse
 from src.services.knowledge_service import KnowledgeService
-from src.services.foundry_service import FoundryService
+from src.services.ai_service import AiService
 from src.database.oracle_client import OracleClient
 from src.repositories.chat_repository import ChatRepository
 from src.utils.guardrails import sanitizar_lgpd
@@ -159,7 +159,7 @@ class TriagemService:
                 possui_imagem=bool(foto_input),
             )
 
-            laudo, modelo_usado = FoundryService.gerar_estruturado(
+            laudo, modelo_usado = AiService.gerar_estruturado(
                 schema_cls=_TriagemIaSchema,
                 system_prompt=SYSTEM_TRIAGEM,
                 user_prompt=prompt_triagem,

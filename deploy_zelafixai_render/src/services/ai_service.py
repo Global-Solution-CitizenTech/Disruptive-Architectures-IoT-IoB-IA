@@ -25,7 +25,7 @@ try:
 except ImportError:
     HAS_PIL = False
 
-logger = logging.getLogger("ZelaFixAI.FoundryService")
+logger = logging.getLogger("ZelaFixAI.AiService")
 T = TypeVar("T", bound=BaseModel)
 
 
@@ -69,10 +69,11 @@ def _extrair_json_bruto(texto: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-class FoundryService:
+class AiService:
     """
-    Cliente thread-safe para o Provedor de IA:
-    - Embeddings semânticos densos em nuvem (1536D) com cache LRU em memória via `AI_EMBEDDING_MODEL`.
+    Cliente thread-safe agnóstico para provedores de IA padrão OpenAI-compatible
+    (OpenRouter, Azure AI, Groq, Ollama, etc.):
+    - Embeddings semânticos densos com cache LRU em memória via `AI_EMBEDDING_MODEL`.
     - Chat multimodal + Tool Calling nativo + Structured JSON Outputs via modelo configurado em `AI_MODEL`.
     """
 
@@ -369,3 +370,6 @@ class FoundryService:
         except ValidationError as err:
             logger.warning(f"Falha na validação Pydantic ({schema_cls.__name__}) em '{modelo}': {err}")
             return None, None
+
+
+

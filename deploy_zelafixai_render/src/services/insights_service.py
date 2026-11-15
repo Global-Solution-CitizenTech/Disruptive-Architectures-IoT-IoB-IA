@@ -12,7 +12,7 @@ from src.schemas.insights import InsightItem, InsightsResponse
 from src.database.oracle_client import OracleClient
 from src.repositories.chat_repository import ChatRepository
 from src.services.knowledge_service import KnowledgeService
-from src.services.foundry_service import FoundryService
+from src.services.ai_service import AiService
 from src.utils.guardrails import sanitizar_lgpd
 from src.utils.text import limpar_texto_mobile
 
@@ -75,7 +75,7 @@ class InsightsService:
             f"com base nos dados reais abaixo:\n{json.dumps(contexto, ensure_ascii=False)}"
         )
 
-        ia_resp, _ = FoundryService.gerar_estruturado(
+        ia_resp, _ = AiService.gerar_estruturado(
             schema_cls=_InsightsIaSchema,
             system_prompt=SYSTEM_INSIGHTS,
             user_prompt=prompt,

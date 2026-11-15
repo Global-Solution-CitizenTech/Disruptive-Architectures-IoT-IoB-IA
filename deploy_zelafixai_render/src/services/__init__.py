@@ -6,7 +6,7 @@ from src.services.knowledge_service import KnowledgeService
 from src.services.chat_service import ChatService
 from src.services.triagem_service import TriagemService
 from src.services.insights_service import InsightsService
-from src.services.foundry_service import FoundryService
+from src.services.ai_service import AiService
 from src.services.chamado_oracle_service import ChamadoOracleService
 
 __all__ = [
@@ -14,6 +14,6 @@ __all__ = [
     "ChatService",
     "TriagemService",
     "InsightsService",
-    "FoundryService",
+    "AiService",
     "ChamadoOracleService",
 ]

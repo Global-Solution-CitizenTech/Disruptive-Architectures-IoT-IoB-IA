@@ -11,7 +11,7 @@ from src.core.config import AI_EMBEDDING_MODEL
 from src.core.prompts import SYSTEM_INSTRUCTION, formatar_prompt_rag
 from src.schemas.chat import ChatRequest, ChatResponse, RetrievedSource, MensagemHistorico
 from src.services.knowledge_service import KnowledgeService
-from src.services.foundry_service import FoundryService
+from src.services.ai_service import AiService
 from src.services.chamado_oracle_service import ChamadoOracleService, TOOLS_ZELAFIX
 from src.repositories.chat_repository import ChatRepository
 from src.utils.guardrails import sanitizar_lgpd
@@ -147,7 +147,7 @@ class ChatService:
                 for k in ("chamado", "protocolo", "ocorrencia", "bairro", "abert", "status", "situacao", "sla", "recente", "lista")
             )
             habilitar_tools = (target_id is None) and (c is None) and (not imagem_para_inferencia) and precisa_tool_consulta
-            ia_result, modelo_usado = FoundryService.gerar_estruturado(
+            ia_result, modelo_usado = AiService.gerar_estruturado(
                 schema_cls=_ChatIaSchema,
                 system_prompt=SYSTEM_INSTRUCTION,
                 user_prompt=prompt_fundamentado,

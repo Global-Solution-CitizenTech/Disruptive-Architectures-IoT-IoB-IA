@@ -116,7 +116,7 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
   ├───────────────────────────────────────────────────────────────────────────────────────────────┤
   │ 2. PIPELINE DE RECUPERAÇÃO SEMÂNTICA EM NUVEM (RAG MUNICIPAL 1536D)                           │
   │    ├─ Embeddings Vetoriais em Nuvem: 1536D (via `AI_EMBEDDING_MODEL`, cache LRU + SHA-256)    │
-  │    └─ ChromaDB (`zelafix_knowledge_foundry_1536d`): HNSW Cosine Similarity com Top-K e corte  │
+  │    └─ ChromaDB (`zelafix_knowledge_1536d`): HNSW Cosine Similarity com Top-K e corte            │
   ├───────────────────────────────────────────────────────────────────────────────────────────────┤
   │ 3. ORQUESTRAÇÃO DE CONTEXTO, IOT & TOOL CALLING ORACLE (SOMENTE LEITURA)                      │
   │    ├─ Fast-path por #ID de chamado + Memória automática das últimas mensagens (SQLite)        │
@@ -174,7 +174,7 @@ Em ambientes de nuvem restritos (plano gratuito do Render com teto rigoroso de *
 
 A solução adotada combina **precisão semântica de nuvem com footprint mínimo**:
 1. **Embeddings Multilíngues de Alta Dimensionalidade (1536D):** O serviço de embeddings em nuvem (configurado dinamicamente via `AI_EMBEDDING_MODEL`) gera vetores unitários normalizados em `R^1536`, compreendendo contexto urbano em português sem necessidade de mapas manuais de sinônimos ou bibliotecas de ML pesadas no container.
-2. **Zero Reindexação Desnecessária (`kb_fingerprint.json`):** No startup, é calculado um hash SHA-256 sobre os 31 chunks normativos e o nome do modelo de embedding. Se a base não mudou, o ChromaDB (`zelafix_knowledge_foundry_1536d`) aquece instantaneamente a partir do disco com **0 chamadas externas de API**.
+2. **Zero Reindexação Desnecessária (`kb_fingerprint.json`):** No startup, é calculado um hash SHA-256 sobre os 31 chunks normativos e o nome do modelo de embedding. Se a base não mudou, o ChromaDB aquece instantaneamente a partir do disco com **0 chamadas externas de API**.
 3. **Cache LRU em Memória (`_MAX_CACHE_EMBEDDINGS = 256`):** Consultas repetidas são atendidas com latência sub-milissegundo e custo zero de API, mantendo a coleção HNSW no ChromaDB com similaridade de cosseno pura (`RAG_MIN_SCORE = 0.28`).
 
 ---
@@ -439,7 +439,7 @@ Disruptive-Architectures-IoT-IoB-IA/
     │   │   ├── triagem_service.py      # Emissor do laudo técnico multimodal e invariantes IoB/RAG
     │   │   ├── insights_service.py     # Diagnóstico preventivo por bairro via IA + Oracle
     │   │   ├── knowledge_service.py    # Indexação SHA-256 e busca semântica 1536D (via `AI_EMBEDDING_MODEL`)
-    │   │   ├── foundry_service.py      # Cliente de IA (`openai` SDK v1 via `AI_MODEL`)
+    │   │   ├── ai_service.py           # Cliente agnóstico de IA (`openai` SDK v1 via `AI_MODEL`)
     │   │   ├── chamado_oracle_service.py # Tools e contexto Oracle FIAP (somente SELECT)
     │   │   └── __init__.py
     │   └── utils/

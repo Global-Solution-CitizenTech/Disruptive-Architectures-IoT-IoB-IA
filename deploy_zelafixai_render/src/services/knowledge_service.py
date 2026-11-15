@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any, List
 import src.core.config as cfg
 from src.knowledge import BASE_CHUNKS_RAG
 from src.database.vector_store import get_vector_store
-from src.services.foundry_service import FoundryService
+from src.services.ai_service import AiService
 from src.utils.text import normalizar_texto
 
 logger = logging.getLogger("ZelaFixAI.KnowledgeService")
@@ -53,7 +53,7 @@ class KnowledgeService:
 
             # 2. Caso base nova ou container limpo, gera embeddings em lote no Provedor de IA
             textos = [_texto_indexacao_chunk(c) for c in cls._chunks_indexados]
-            vetores = FoundryService.gerar_embeddings(textos)
+            vetores = AiService.gerar_embeddings(textos)
             if vetores and len(vetores) == len(cls._chunks_indexados):
                 cls._embeddings_por_id = {c["id"]: v for c, v in zip(cls._chunks_indexados, vetores)}
                 if vs.is_ready:
@@ -113,7 +113,7 @@ class KnowledgeService:
         if not pergunta or not pergunta.strip():
             return {"match_found": False, "chunks": []}
 
-        query_vec = FoundryService.gerar_embedding(pergunta)
+        query_vec = AiService.gerar_embedding(pergunta)
         if query_vec is None:
             return cls._fallback_contingencia_offline(pergunta, top_k, categoria_filtro)
 
@@ -153,7 +153,7 @@ class KnowledgeService:
                     "content": c["content"],
                     "urgency": c.get("urgency", "baixa"),
                     "similarity_score": round(s, 4),
-                    "vector_db": "FoundryInMem",
+                    "vector_db": "AiInMem",
                 }
                 for s, c in scores[:top_k]
             ]

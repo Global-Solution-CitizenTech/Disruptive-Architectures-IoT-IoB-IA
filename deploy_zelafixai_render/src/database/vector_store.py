@@ -18,7 +18,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 DATA_DIR = os.path.join(BASE_DIR, "data")
 CHROMA_DIR = os.path.join(DATA_DIR, "chroma")
 FINGERPRINT_PATH = os.path.join(DATA_DIR, "kb_fingerprint.json")
-COLLECTION_NAME = f"zelafix_knowledge_foundry_{AI_EMBEDDING_DIMENSIONS}d"
+COLLECTION_NAME = os.environ.get("CHROMA_COLLECTION_NAME", f"zelafix_knowledge_{AI_EMBEDDING_DIMENSIONS}d")
 
 _vector_store_lock = threading.Lock()
 
@@ -67,12 +67,18 @@ class ChromaVectorStore:
                 path=self.chroma_dir,
                 settings=Settings(anonymized_telemetry=False, allow_reset=True),
             )
+            colecoes = [c.name for c in self._client.list_collections()]
+            target_col = COLLECTION_NAME
+            legacy_col = f"zelafix_knowledge_foundry_{AI_EMBEDDING_DIMENSIONS}d"
+            if target_col not in colecoes and legacy_col in colecoes:
+                target_col = legacy_col
+
             self._collection = self._client.get_or_create_collection(
-                name=COLLECTION_NAME,
+                name=target_col,
                 metadata={"hnsw:space": "cosine"},
             )
             self._is_ready = True
-            logger.info(f"ChromaDB pronto em '{self.chroma_dir}' (Coleção: '{COLLECTION_NAME}').")
+            logger.info(f"ChromaDB pronto em '{self.chroma_dir}' (Coleção: '{target_col}').")
         except Exception as err:
             logger.warning(f"ChromaDB indisponível, operando em memória: {err}")
             self._is_ready = False
