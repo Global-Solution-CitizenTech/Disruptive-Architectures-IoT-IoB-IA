@@ -66,10 +66,27 @@ class TriagemService:
             prioridade = "ALTA"
 
         sla_map = {"URGENTE": 12, "ALTA": 24, "MEDIA": 48, "BAIXA": 72}
+        cid = str(topo.get("id", "")).lower()
+        if cid.startswith("cet_") or "cet" in str(topo.get("source", "")).lower():
+            orgao = "Companhia de Engenharia de Tráfego — CET / SPTrans"
+            sla_horas = 4 if prioridade == "URGENTE" else 24
+        elif cid.startswith("sabesp_") or "sabesp" in str(topo.get("source", "")).lower():
+            orgao = "Sabesp — Companhia de Saneamento Básico do Estado de São Paulo"
+            sla_horas = 12 if prioridade == "URGENTE" else 24
+        elif cid.startswith("ilum_"):
+            orgao = "Ilumina SP / Concessionária de Iluminação Pública"
+            sla_horas = 24
+        elif cid.startswith("arb_") and "enel" in str(topo.get("content", "")).lower():
+            orgao = "ENEL Distribuição São Paulo / Subprefeitura"
+            sla_horas = 4 if prioridade == "URGENTE" else 24
+        else:
+            orgao = topo.get("organ") or "Subprefeitura Regional / Órgão Municipal Competente"
+            sla_horas = int(topo.get("sla_hours") or sla_map.get(prioridade, 48))
+
         return _TriagemIaSchema(
             prioridade=prioridade,
-            orgao_responsavel="Subprefeitura Regional / Órgão Municipal Competente",
-            sla_sugerido_horas=sla_map[prioridade],
+            orgao_responsavel=orgao,
+            sla_sugerido_horas=sla_horas,
             parecer_ia=f"Ocorrência de {categoria} triada em contingência normativa ({apoios} apoios).",
             enquadramento_legal=f"{topo.get('source', 'PMSP / SP156')} — {topo.get('title', categoria)}".strip(" —"),
             risco_potencial="Necessita vistoria técnica presencial para confirmação em campo.",

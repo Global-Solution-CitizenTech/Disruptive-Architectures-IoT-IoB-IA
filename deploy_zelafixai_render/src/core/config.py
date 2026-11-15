@@ -22,7 +22,7 @@ APP_VERSION = "3.0.0"
 # Azure AI Foundry (API OpenAI-compatible v1)
 AI_BASE_URL = os.environ.get("AI_BASE_URL", "").strip()
 AI_API_KEY = os.environ.get("AI_API_KEY", "").strip()
-AI_MODEL = os.environ.get("AI_MODEL", "phi-4-multimodal").strip()
+AI_MODEL = os.environ.get("AI_MODEL", "gpt-5-nano").strip()
 AI_EMBEDDING_MODEL = os.environ.get("AI_EMBEDDING_MODEL", "embed-v-4-0").strip()
 AI_EMBEDDING_DIMENSIONS = int(os.environ.get("AI_EMBEDDING_DIMENSIONS", "1536"))
 AI_TIMEOUT_SECONDS = float(os.environ.get("AI_TIMEOUT_SECONDS", "25.0"))
