@@ -165,7 +165,14 @@ class AiService:
             if client is None:
                 return None
             try:
-                resp = client.embeddings.create(model=emb_model, input=faltantes_txt)
+                try:
+                    resp = client.embeddings.create(
+                        model=emb_model,
+                        input=faltantes_txt,
+                        dimensions=cfg.AI_EMBEDDING_DIMENSIONS,
+                    )
+                except Exception:
+                    resp = client.embeddings.create(model=emb_model, input=faltantes_txt)
                 gerados = [_l2_normalize(list(item.embedding)) for item in resp.data]
                 with cls._lock:
                     for idx, txt, vec in zip(faltantes_idx, faltantes_txt, gerados):
