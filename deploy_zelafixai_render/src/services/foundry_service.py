@@ -31,9 +31,13 @@ T = TypeVar("T", bound=BaseModel)
 
 def _normalizar_base_url(url: str) -> str:
     limpa = url.strip().rstrip("/")
-    if limpa and not limpa.endswith("/openai/v1"):
-        limpa = f"{limpa}/openai/v1"
-    return limpa
+    if not limpa:
+        return ""
+    if limpa.endswith("/v1") or limpa.endswith("/openai/v1"):
+        return limpa
+    if "services.ai.azure.com" in limpa or "openai.azure.com" in limpa:
+        return f"{limpa}/openai/v1"
+    return f"{limpa}/v1"
 
 
 def _l2_normalize(vec: List[float]) -> List[float]:
