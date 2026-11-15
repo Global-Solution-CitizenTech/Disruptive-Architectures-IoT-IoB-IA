@@ -116,7 +116,7 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
   ├───────────────────────────────────────────────────────────────────────────────────────────────┤
   │ 2. PIPELINE DE RECUPERAÇÃO SEMÂNTICA EM NUVEM (RAG MUNICIPAL 1536D)                           │
   │    ├─ Embeddings Vetoriais em Nuvem: 1536D (via `AI_EMBEDDING_MODEL`, cache LRU + SHA-256)    │
-  │    └─ ChromaDB (`zelafix_knowledge_1536d`): HNSW Cosine Similarity com Top-K e corte            │
+  │    └─ ChromaDB (`zelafix_knowledge_1536d`): HNSW Cosine Similarity com Top-K e corte          │
   ├───────────────────────────────────────────────────────────────────────────────────────────────┤
   │ 3. ORQUESTRAÇÃO DE CONTEXTO, IOT & TOOL CALLING ORACLE (SOMENTE LEITURA)                      │
   │    ├─ Fast-path por #ID de chamado + Memória automática das últimas mensagens (SQLite)        │
