@@ -169,11 +169,11 @@ A arquitetura refatorada do **ZelaFix AI** resolve esse dilema através da integ
 
 ## 🔬 6. Embeddings Vetoriais em Nuvem (1536D), Cache SHA-256 e Eficiência no Render
 
-### Por que Embeddings Densos em Nuvem (`embed-v-4-0`) com Fingerprint Local?
+### Por que Embeddings Densos em Nuvem (1536D) com Fingerprint Local?
 Em ambientes de nuvem restritos (plano gratuito do Render com teto rigoroso de **512 MB de RAM**), carregar redes neurais localmente via PyTorch ou `sentence-transformers` aloca 800 MB a 1.4 GB de RAM e aciona o Linux OOM-Killer (`SIGKILL`). Ao mesmo tempo, projeções puramente léxicas locais não capturam semântica profunda de relatos coloquiais.
 
 A solução adotada combina **precisão semântica de nuvem com footprint mínimo**:
-1. **Embeddings Multilíngues de Alta Dimensionalidade (1536D):** O modelo `embed-v-4-0` no Azure AI Foundry gera vetores unitários normalizados em `R^1536`, compreendendo contexto urbano em português sem necessidade de mapas manuais de sinônimos ou bibliotecas de ML pesadas no container.
+1. **Embeddings Multilíngues de Alta Dimensionalidade (1536D):** O serviço de embeddings em nuvem (configurado dinamicamente via `AI_EMBEDDING_MODEL`) gera vetores unitários normalizados em `R^1536`, compreendendo contexto urbano em português sem necessidade de mapas manuais de sinônimos ou bibliotecas de ML pesadas no container.
 2. **Zero Reindexação Desnecessária (`kb_fingerprint.json`):** No startup, é calculado um hash SHA-256 sobre os 31 chunks normativos e o nome do modelo de embedding. Se a base não mudou, o ChromaDB (`zelafix_knowledge_foundry_1536d`) aquece instantaneamente a partir do disco com **0 chamadas externas de API**.
 3. **Cache LRU em Memória (`_MAX_CACHE_EMBEDDINGS = 256`):** Consultas repetidas são atendidas com latência sub-milissegundo e custo zero de API, mantendo a coleção HNSW no ChromaDB com similaridade de cosseno pura (`RAG_MIN_SCORE = 0.28`).
 

@@ -23,7 +23,7 @@ def _texto_indexacao_chunk(chunk: Dict[str, Any]) -> str:
 class KnowledgeService:
     """
     Motor RAG Semântico ZelaFix AI:
-    - Vetorização semântica densa em nuvem (`embed-v-4-0`, 1536D) persistida no ChromaDB.
+    - Vetorização semântica densa em nuvem (1536D via `AI_EMBEDDING_MODEL`) persistida no ChromaDB.
     - Fingerprint SHA-256 para evitar chamadas de reindexação no startup quando a base não mudou.
     - Fallback automático em memória e contingência offline caso a rede externa falhe.
     """
