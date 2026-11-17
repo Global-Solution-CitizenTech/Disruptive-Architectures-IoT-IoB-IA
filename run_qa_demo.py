@@ -7,7 +7,7 @@ FIAP Global Solution 2026/2 — Disruptive Architectures: IoT, IoB & Generative 
 Uso direto no terminal:
     python run_qa_demo.py
     python run_qa_demo.py --delay 0.5
-    python run_qa_demo.py --mode api --url https://deploy-zelafixai-render.onrender.com
+    python run_qa_demo.py --mode api --url https://disruptive-architectures-iot-iob-ia-mpl5.onrender.com
 """
 import os
 import sys

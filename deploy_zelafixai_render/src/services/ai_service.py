@@ -171,9 +171,17 @@ class AiService:
                         input=faltantes_txt,
                         dimensions=cfg.AI_EMBEDDING_DIMENSIONS,
                     )
-                except Exception:
-                    resp = client.embeddings.create(model=emb_model, input=faltantes_txt)
-                gerados = [_l2_normalize(list(item.embedding)) for item in resp.data]
+                except Exception as dim_err:
+                    # Só tenta sem `dimensions` se for erro 400 de parâmetro não suportado (não em 429/timeout)
+                    if "400" in str(dim_err) or "dimension" in str(dim_err).lower():
+                        resp = client.embeddings.create(model=emb_model, input=faltantes_txt)
+                    else:
+                        raise
+                target_dim = cfg.AI_EMBEDDING_DIMENSIONS
+                gerados = [
+                    _l2_normalize(list(item.embedding)[:target_dim] if target_dim > 0 and len(item.embedding) > target_dim else list(item.embedding))
+                    for item in resp.data
+                ]
                 with cls._lock:
                     for idx, txt, vec in zip(faltantes_idx, faltantes_txt, gerados):
                         resultados[idx] = vec

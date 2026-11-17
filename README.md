@@ -26,7 +26,7 @@
 * **Health Check & Telemetria:** [`/health`](https://disruptive-architectures-iot-iob-ia-mpl5.onrender.com/health) | [`/ai/vector-store/status`](https://disruptive-architectures-iot-iob-ia-mpl5.onrender.com/ai/vector-store/status) | [`/ai/oracle/status`](https://disruptive-architectures-iot-iob-ia-mpl5.onrender.com/ai/oracle/status)
 * **Repositório GitHub Oficial:** [https://github.com/Global-Solution-CitizenTech/Disruptive-Architectures-IoT-IoB-IA](https://github.com/Global-Solution-CitizenTech/Disruptive-Architectures-IoT-IoB-IA)
 * **Microsserviço FastAPI:** [`deploy_zelafixai_render`](./deploy_zelafixai_render)
-* **Documentação de Entrega Formal (.txt):** [`ENTREGA_GS_2026_2.txt`](./ENTREGA_GS_2026_2.txt)
+* **Documentação de Entrega Formal (.txt):** [`identificacao.txt`](./identificacao.txt)
 
 ---
 
@@ -333,7 +333,7 @@ O microsserviço implementa camadas ativas de conformidade e tratamento de dados
 
 ## 🧪 10. Avaliação Empírica e Testes Automatizados
 
-A confiabilidade do microsserviço é assegurada por **três suítes de testes automatizados**, totalizando **82 casos de validação executáveis com 100% de sucesso comprovado**:
+A confiabilidade do microsserviço é assegurada por **duas suítes de testes automatizados**, totalizando **49 casos de validação executáveis com 100% de sucesso comprovado**:
 
 ```text
 ======================================================================
@@ -393,7 +393,7 @@ TOTAL GERAL: 49/49 TESTES AUTOMATIZADOS APROVADOS — 100% DE SUCESSO
 ```
 Disruptive-Architectures-IoT-IoB-IA/
 ├── README.md                           # Documentação técnica central e consolidada
-├── ENTREGA_GS_2026_2.txt               # Arquivo formal de identificação da entrega
+├── identificacao.txt                   # Arquivo formal de identificação da entrega
 ├── AGENT.md                            # Especificação técnica do agente e arquitetura detalhada
 ├── run_qa_demo.py                      # Runner executivo oficial de homologação e QA (--delay)
 ├── .gitignore                          # Ignora ambientes virtuais, bancos e caches

@@ -32,11 +32,12 @@ class KnowledgeService:
     _chunks_indexados: List[Dict[str, Any]] = []
     _embeddings_por_id: Dict[str, List[float]] = {}
     _indice_inicializado: bool = False
+    _chroma_sincronizado: bool = False
 
     @classmethod
     def inicializar_indice_rag(cls) -> None:
         with cls._lock:
-            if cls._indice_inicializado and len(cls._embeddings_por_id) == len(BASE_CHUNKS_RAG):
+            if cls._indice_inicializado:
                 return
 
             cls._chunks_indexados = list(BASE_CHUNKS_RAG)
@@ -47,6 +48,7 @@ class KnowledgeService:
                 em_disco = vs.carregar_embeddings_em_disco()
                 if len(em_disco) == len(cls._chunks_indexados):
                     cls._embeddings_por_id = em_disco
+                    cls._chroma_sincronizado = True
                     cls._indice_inicializado = True
                     logger.info(f"RAG aquecido do ChromaDB em disco ({len(em_disco)} chunks, 0 chamadas de API).")
                     return
@@ -58,9 +60,11 @@ class KnowledgeService:
                 cls._embeddings_por_id = {c["id"]: v for c, v in zip(cls._chunks_indexados, vetores)}
                 if vs.is_ready:
                     vs.seed_knowledge_base(cls._chunks_indexados, vetores, cfg.AI_EMBEDDING_MODEL)
+                    cls._chroma_sincronizado = True
                 cls._indice_inicializado = True
                 return
 
+            cls._chroma_sincronizado = False
             logger.warning("Provedor de IA indisponível para indexação inicial; fallback offline habilitado.")
             cls._indice_inicializado = True
 
@@ -113,13 +117,16 @@ class KnowledgeService:
         if not pergunta or not pergunta.strip():
             return {"match_found": False, "chunks": []}
 
+        if not cls._embeddings_por_id and not cls._chroma_sincronizado:
+            return cls._fallback_contingencia_offline(pergunta, top_k, categoria_filtro)
+
         query_vec = AiService.gerar_embedding(pergunta)
         if query_vec is None:
             return cls._fallback_contingencia_offline(pergunta, top_k, categoria_filtro)
 
         # 1. Busca semântica primária no ChromaDB (HNSW Cosine)
         vs = get_vector_store()
-        if vs.is_ready and vs.count > 0:
+        if cls._chroma_sincronizado and vs.is_ready and vs.count > 0:
             where_filter = {"category": categoria_filtro} if categoria_filtro else None
             resultados = vs.search(
                 query_embedding=query_vec,
