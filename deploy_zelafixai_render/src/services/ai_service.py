@@ -8,6 +8,7 @@ import os
 import re
 import json
 import math
+import time
 import base64
 import logging
 import threading
@@ -79,10 +80,13 @@ class AiService:
 
     MAX_HISTORICO_TURNOS = 6
     _MAX_CACHE_EMBEDDINGS = 256
+    _COOLDOWN_SEGUNDOS = 60.0
     _lock = threading.Lock()
     _client: Optional[OpenAI] = None
     _client_sig: Optional[Tuple[str, str]] = None
     _embedding_cache: "OrderedDict[str, List[float]]" = OrderedDict()
+    _emb_cooldown_until: float = 0.0
+    _chat_cooldown_until: float = 0.0
 
     @classmethod
     def _obter_cliente(cls) -> Optional[OpenAI]:
@@ -98,7 +102,7 @@ class AiService:
                     base_url=base_url,
                     api_key=api_key,
                     timeout=cfg.AI_TIMEOUT_SECONDS,
-                    max_retries=2,
+                    max_retries=1,
                 )
                 cls._client_sig = sig
             return cls._client
@@ -158,6 +162,8 @@ class AiService:
                     faltantes_txt.append(txt)
 
         if faltantes_txt:
+            if time.monotonic() < cls._emb_cooldown_until:
+                return None
             emb_model = (os.environ.get("AI_EMBEDDING_MODEL") or cfg.AI_EMBEDDING_MODEL).strip()
             if not emb_model or emb_model.lower() in ("disabled", "none", "offline", "false"):
                 return None
@@ -190,7 +196,8 @@ class AiService:
                         if len(cls._embedding_cache) > cls._MAX_CACHE_EMBEDDINGS:
                             cls._embedding_cache.popitem(last=False)
             except Exception as err:
-                logger.error(f"Erro ao gerar embeddings no Provedor de IA ({emb_model}): {err}")
+                cls._emb_cooldown_until = time.monotonic() + cls._COOLDOWN_SEGUNDOS
+                logger.warning(f"Embeddings em contingência local ({emb_model}): {err}")
                 return None
 
         return [v for v in resultados if v is not None]
@@ -325,7 +332,7 @@ class AiService:
         """
         client = cls._obter_cliente()
         modelo = (os.environ.get("AI_MODEL") or cfg.AI_MODEL).strip()
-        if client is None or not modelo:
+        if client is None or not modelo or time.monotonic() < cls._chat_cooldown_until:
             return None, None
 
         img_limpa = cls.sanitizar_imagem_base64(imagem_base64) if imagem_base64 else None
@@ -345,7 +352,9 @@ class AiService:
             if conteudo:
                 return conteudo, modelo
         except Exception as err:
-            logger.warning(f"Falha no modelo '{modelo}' do Provedor de IA: {err}")
+            if "429" in str(err) or "rate" in str(err).lower() or "connection" in str(err).lower():
+                cls._chat_cooldown_until = time.monotonic() + cls._COOLDOWN_SEGUNDOS
+            logger.info(f"Contingência ativada para '{modelo}' no Provedor de IA: {err}")
 
         return None, None
 

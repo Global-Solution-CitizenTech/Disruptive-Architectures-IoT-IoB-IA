@@ -62,9 +62,14 @@ class ChatService:
                 ],
             )
 
+        if contexto_chamado and not chunks:
+            return _ChatIaSchema(
+                resposta=f"📋 {contexto_chamado}",
+                categoria="zeladoria",
+                urgencia="media",
+                acoes_recomendadas=["Acompanhar atualizações do protocolo pelo app ZelaFix"],
+            )
         msg = "🏛️ Olá! Sou o ZelaBot (ZelaFix). Posso ajudar com dúvidas sobre tapa-buraco, bueiros, iluminação, podas, Ecopontos, trânsito CET, Sabesp e protocolos do app."
-        if contexto_chamado:
-            msg += f"\n\n📌 {contexto_chamado}"
         return _ChatIaSchema(
             resposta=msg,
             categoria="zeladoria",

@@ -70,7 +70,7 @@ class TriagemService:
         if cid.startswith("cet_") or "cet" in str(topo.get("source", "")).lower():
             orgao = "Companhia de Engenharia de Tráfego — CET / SPTrans"
             sla_horas = 4 if prioridade == "URGENTE" else 24
-        elif cid.startswith("sabesp_") or "sabesp" in str(topo.get("source", "")).lower():
+        elif cid.startswith(("sab_", "sabesp_")) or "sabesp" in str(topo.get("source", "")).lower():
             orgao = "Sabesp — Companhia de Saneamento Básico do Estado de São Paulo"
             sla_horas = 12 if prioridade == "URGENTE" else 24
         elif cid.startswith("ilum_"):
@@ -79,6 +79,12 @@ class TriagemService:
         elif cid.startswith("arb_") and "enel" in str(topo.get("content", "")).lower():
             orgao = "ENEL Distribuição São Paulo / Subprefeitura"
             sla_horas = 4 if prioridade == "URGENTE" else 24
+        elif cid.startswith("dren_"):
+            orgao = "SIURB / Subprefeitura Regional — Drenagem Urbana"
+            sla_horas = 24 if prioridade in ("URGENTE", "ALTA") else 48
+        elif cid.startswith("limp_"):
+            orgao = "AMLURB / Subprefeitura Regional — Limpeza Urbana"
+            sla_horas = 48
         else:
             orgao = topo.get("organ") or "Subprefeitura Regional / Órgão Municipal Competente"
             sla_horas = int(topo.get("sla_hours") or sla_map.get(prioridade, 48))
@@ -185,6 +191,8 @@ class TriagemService:
 
             sla_raw = int(laudo.sla_sugerido_horas or _SLA_TETO_PRIORIDADE[prioridade])
             sla_horas = max(1, min(sla_raw, _SLA_TETO_PRIORIDADE[prioridade]))
+            if chunks and chunks[0].get("id") == "cet_01":
+                sla_horas = min(sla_horas, 4)
             parecer_ia = _truncar_parecer_150(laudo.parecer_ia)
             orgao = sanitizar_lgpd(limpar_texto_mobile(laudo.orgao_responsavel)) or "Subprefeitura Regional"
             enquadramento = sanitizar_lgpd(limpar_texto_mobile(laudo.enquadramento_legal))

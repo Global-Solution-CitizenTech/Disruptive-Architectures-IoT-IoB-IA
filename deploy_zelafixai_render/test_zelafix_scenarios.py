@@ -4,9 +4,9 @@
 🏛️ ZELAFIX AI — SUÍTE OFICIAL DE QA, HOMOLOGAÇÃO & AUDITORIA DE CENÁRIOS
 FIAP Global Solution 2026/2 — Disruptive Architectures: IoT, IoB & Generative IA (2TDSPG)
 
-Testa os 10 fluxos críticos de ponta a ponta:
+Testa os 12 fluxos críticos de ponta a ponta:
  1. Chat ZelaBot com RAG Normativo (Lei 13.478/2002 - AMLURB / Ecopontos)
- 2. Higienização Mobile Clean (Sem tabelas pipes ou markdown bruto no chat)
+ 2. Higienização Mobile Clean & Anonimização LGPD (Sem pipes, markdown bruto ou vazamento de CPF)
  3. Orientação Cívica sobre Fiação e Poda Arbórea (Lei 17.267 / ENEL)
  4. Consulta Conversacional de Chamado Real no Oracle FIAP (#2)
  5. Triagem Técnica de Pavimentação com Alto Engajamento Comunitário (+1 IoB)
@@ -14,7 +14,9 @@ Testa os 10 fluxos críticos de ponta a ponta:
  7. Triagem de Saneamento Básico (Sabesp 195)
  8. Integridade Relacional e Auditoria Cívica no SQLite
  9. Conexão e Telemetria em Tempo Real no Banco Oracle FIAP (Modo Thin)
- 10. Visão Computacional Multimodal (Provedor de IA) sobre Fotos Urbanas
+ 10. Visão Computacional Multimodal sobre Fotos Urbanas & Rejeição de Imagem Corrompida
+ 11. Roteamento Real 'Drenagem e Esgoto' + Telemetria IoT (sem colidir com Sabesp)
+ 12. Memória Multi-Turno Automática via sessionId (SQLite) + Insights Vivos Oracle
 
 Uso:
     python test_zelafix_scenarios.py
@@ -122,11 +124,13 @@ def executar_local(delay: float):
         delay
     )
 
-    # Cenário 2: Higienização Mobile Clean
+    # Cenário 2: Higienização Mobile Clean & Proteção LGPD
+    from src.utils.guardrails import sanitizar_lgpd
+    amostra_lgpd = sanitizar_lgpd("Relato do munícipe CPF 123.456.789-00 e cartão 4532 1111 2222 3333")
     testar_cenario(
-        2, "Formatação Mobile Clean (Sem Tabelas Pipes ou Markdown Bruto)",
-        "|" not in resp_1.resposta and "**" not in resp_1.resposta,
-        "Resposta perfeitamente higienizada para visualização mobile e acessibilidade.",
+        2, "Formatação Mobile Clean & Anonimização LGPD (Sem Pipes/Markdown/CPF)",
+        "|" not in resp_1.resposta and "**" not in resp_1.resposta and "123.456.789-00" not in amostra_lgpd and "[DADO PESSOAL ANONIMIZADO]" in amostra_lgpd,
+        "Resposta higienizada para mobile e dados sensíveis (CPF/cartão) anonimizados via LGPD.",
         delay
     )
 
@@ -260,7 +264,8 @@ def executar_local(delay: float):
         delay
     )
 
-    # Cenário 10: Visão Computacional Multimodal (Provedor de IA)
+    # Cenário 10: Visão Computacional Multimodal (Provedor de IA) & Falha de Imagem Inválida
+    from src.services.ai_service import AiService
     foto_b64 = criar_imagem_teste_base64()
     req_visao = TriagemRequest(
         chamado=ChamadoContextPayload(
@@ -274,11 +279,13 @@ def executar_local(delay: float):
     )
     resp_visao = TriagemService.realizar_triagem(req_visao)
     teve_visao = resp_visao.analise_visual is not None and len(resp_visao.analise_visual) > 5
-    usou_ia = "IA Multimodal" in resp_visao.origem_triagem or "ZelaFix" in resp_visao.origem_triagem
+    usou_ia = "IA Multimodal" in resp_visao.origem_triagem
+    rejeitou_invalida = AiService.sanitizar_imagem_base64("imagem_corrompida_invalida") is None
+    visao_honesta = teve_visao if usou_ia else resp_visao.analise_visual is None
     testar_cenario(
-        10, "Visão Computacional Multimodal (Provedor de IA)",
-        resp_visao.prioridade in ["MEDIA", "ALTA", "URGENTE"] and (teve_visao or not usou_ia or True),
-        f"Laudo Visual: {resp_visao.analise_visual[:80] if teve_visao else 'Triagem executada via motor de contingência'}",
+        10, "Visão Computacional Multimodal & Rejeição Segura de Imagem Corrompida",
+        resp_visao.prioridade in ["MEDIA", "ALTA", "URGENTE"] and visao_honesta and rejeitou_invalida,
+        f"Origem: {resp_visao.origem_triagem} | Laudo Visual: {resp_visao.analise_visual[:85] if teve_visao else 'None (contingência sem visão remota)'}",
         delay
     )
 

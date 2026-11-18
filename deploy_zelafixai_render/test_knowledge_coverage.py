@@ -14,6 +14,7 @@ if DIRETORIO_RAIZ not in sys.path:
 
 from src.knowledge import BASE_CHUNKS_RAG
 from src.services.knowledge_service import KnowledgeService
+from src.services.ai_service import AiService
 
 CASOS = [
     # Pavimentação e Tapa-Buraco
@@ -79,6 +80,12 @@ def main() -> int:
     falhas = 0
     print(f"\n🚀 Iniciando Teste de Cobertura da Base RAG ZelaFix ({len(BASE_CHUNKS_RAG)} chunks indexados)...")
     print("-" * 80)
+
+    # Pré-aquece os embeddings de todas as consultas em uma única chamada em lote para preservar cota de API
+    KnowledgeService.inicializar_indice_rag()
+    AiService.gerar_embeddings(
+        [p for p, _ in CASOS] + ["semáforo apagado cruzamento CET", "buraco profundo no asfalto da rua"]
+    )
 
     for pergunta, esperado in CASOS:
         resultado = KnowledgeService.buscar_chunks_rag(pergunta, top_k=3)

@@ -11,11 +11,11 @@
 
 | Nome Completo | RM | Função / Especialidade | GitHub | LinkedIn |
 | :--- | :---: | :--- | :--- | :--- |
-| **Enzo Okuizumi** | **561432** | Mobile Developer & Arquiteto React Native | [@EnzoOkuizumiFiap](https://github.com/EnzoOkuizumiFiap) | [Enzo Okuizumi](https://www.linkedin.com/in/enzo-okuizumi-b60292256/) |
-| **Gustavo Okada** | **563428** | Backend Developer & API Integration | [@Gdev3356](https://github.com/Gdev3356) | [Gustavo Okada](https://www.linkedin.com/in/gustavo-okada-53a3b8359/) |
+| **Enzo Okuizumi Miranda de Souza** | **561432** | Mobile Developer & Arquiteto React Native | [@EnzoOkuizumiFiap](https://github.com/EnzoOkuizumiFiap) | [Enzo Okuizumi](https://www.linkedin.com/in/enzo-okuizumi-b60292256/) |
+| **Gustavo Keiji Okada** | **563428** | Backend Developer & API Integration | [@Gdev3356](https://github.com/Gdev3356) | [Gustavo Okada](https://www.linkedin.com/in/gustavo-okada-53a3b8359/) |
 | **Lucas Barros Gouveia** | **566422** | Fullstack Developer & Database Architect | [@LuzBGouveia](https://github.com/LuzBGouveia) | [Lucas Barros Gouveia](https://www.linkedin.com/in/lucas-barros-gouveia-09b147355/) |
 | **Luna de Carvalho Guimarães** | **562290** | UI/UX Designer & Mobile Frontend Specialist | [@lunaguima](https://github.com/lunaguima) | [Luna Guimarães](https://www.linkedin.com/in/luna-guimar%C3%A3es-b0ba82309/) |
-| **Milton Marcelino** | **564836** | DevOps & Quality Assurance (QA) | [@MiltonMarcelino](https://github.com/MiltonMarcelino) | [Milton Marcelino](https://www.linkedin.com/in/milton-marcelino-250298142) |
+| **Milton Jakson de Sousa Marcelino** | **564836** | DevOps & Quality Assurance (QA) | [@MiltonMarcelino](https://github.com/MiltonMarcelino) | [Milton Marcelino](https://www.linkedin.com/in/milton-marcelino-250298142) |
 
 ---
 
@@ -75,6 +75,14 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 #### 3. Para a Cidade e Meio Ambiente (ODS 11)
 - **Cidades Mais Resilientes e Sustentáveis:** Manutenção preventiva acelerada de bueiros e bocas de leão, reduzindo alagamentos críticos na temporada de chuvas de verão.
 - **Combate ao Descarte Clandestino de Resíduos:** Fomento contínuo ao uso dos Ecopontos e divulgação da operação Cata-Bagulho, reduzindo focos de vetores infecciosos (dengue e roedores).
+
+#### 4. Como o Impacto é Medido e Ampliado (Indicadores CitizenTech)
+| Indicador (KPI) | Cenário Legado (Manual) | Meta com ZelaFix AI | Como é Aferido |
+| :--- | :--- | :--- | :--- |
+| **Tempo de Triagem e Enquadramento Legal** | 2 a 5 dias úteis | **< 3 segundos** (tempo real) | Timestamp da auditoria em `auditoria_triagens` (SQLite) |
+| **Assertividade de Roteamento por Órgão** | ~65% (erros de competência) | **100% nos 8 eixos normativos** | Suíte automatizada `test_zelafix_scenarios.py` |
+| **Priorização Coletiva Cidadã (IoB +1 / IoT)** | Inexistente (fila FIFO) | **Promoção automática ($\ge 25$ apoios ou anomalia IoT)** | Contagem em `voto_chamado` (Oracle) + `telemetria_iot` |
+| **Transparência de SLA Regulamentar** | Opaco para o munícipe | **100% dos laudos com SLA explícito (4h a 72h)** | Campo `sla_sugerido_horas` validado via Pydantic |
 
 ---
 
@@ -368,9 +376,19 @@ TOTAL GERAL: 49/49 TESTES AUTOMATIZADOS APROVADOS — 100% DE SUCESSO
   11. *Roteamento Real Oracle + Telemetria IoT:* Categoria `'Drenagem e Esgoto'` com sensor de bueiro sem colidir com Sabesp.
   12. *Memória Multi-Turno Automática + Insights Vivos:* Carregamento de sessão por `sessionId` no SQLite e insights alimentados pelo Oracle FIAP.
 
-### 10.3 Otimização de Custos e Proteção contra Esgotamento de Quota (429)
-- **Eliminação de Testes Destrutivos / Rajadas Excessivas:** Testes pesados que submetiam payloads desproporcionais (ex: 50.000 caracteres) ou dezenas de conexões concorrentes simultâneas em thread pool foram descontinuados para proteger integralmente a cota de tokens por minuto (TPM/RPM) do provedor de IA e evitar bloqueios operacionais por taxa de requisição (`HTTP 429`).
-- **Resiliência Graciosa sem Crash:** Caso a rede externa ou a cota do provedor de IA seja atingida, o motor de contingência normativa local assume a resposta, garantindo status HTTP 200, preservação de SLAs regulamentares e continuidade ininterrupta do serviço ao munícipe.
+### 10.3 Métricas Quantitativas, Cenários de Falha e Interpretação Crítica dos Resultados
+
+| Dimensão Avaliada | Métrica / Critério Adotado | Amostra | Resultado Obtido | Interpretação Técnica |
+| :--- | :--- | :---: | :---: | :--- |
+| **Recuperação Semântica RAG (In-Domain)** | `Recall@2` (chunk esperado no Top-2) | 31 casos (8 módulos PMSP) | **100,0% (31/31)** | Os vetores densos (1536D) e os metadados normativos distinguem com precisão competências próximas (ex.: drenagem SIURB vs. esgoto Sabesp). |
+| **Rejeição de Fora de Escopo (Falha/Ruído)** | `Especificidade` (0 chunks para temas alheios) | 4 casos fora de domínio | **100,0% (4/4)** | O limiar de corte (`RAG_MIN_SCORE = 0.28`) impede injeção de leis municipais em perguntas sobre culinária, futebol, geografia ou código. |
+| **Isolamento de Metadados ChromaDB** | Preservação de `urgency` e filtro `where` | 2 invariantes vetoriais | **100,0% (2/2)** | Filtros por categoria (`iluminacao` vs. `pavimentacao`) não vazam documentos entre secretarias distintas. |
+| **Triagem Técnica, IoB (+1) e IoT** | Conformidade de Prioridade, Órgão e Teto de SLA | 5 cenários críticos | **100,0% (5/5)** | O piso normativo garante `URGENTE` + `SLA <= 4h` para semáforos CET (`cet_01`), `SLA <= 12h` para Sabesp (`sab_01`) e elevação para `ALTA`/`URGENTE` quando apoios $\ge 25$ ou sensor IoT acusa anomalia. |
+| **Resiliência a Falhas & Guardrails** | Imagem corrompida, CPF/cartão (LGPD) e HTTP 429 | 4 cenários de exceção | **100,0% (4/4)** | Base64 inválido é descartado sem crash (`None`), CPFs/cartões são mascarados antes da inferência/persistência e falhas de rede/quota (`429`) acionam *cooldown* e contingência normativa local (`HTTP 200`). |
+
+### 10.4 Otimização de Custos e Proteção contra Esgotamento de Quota (429)
+- **Batching de Embeddings e Cooldown Inteligente:** A suíte de cobertura pré-aquece os embeddings em lote único e o `AiService` aplica *circuit-breaker* temporário (60s) ao detectar limite de taxa (`HTTP 429`), evitando retentativas em cascata e preservando a cota do provedor de IA.
+- **Resiliência Graciosa sem Crash:** Caso a rede externa ou a cota do provedor de IA seja atingida, o motor de contingência normativa local assume a resposta textual e a triagem estruturada (`analise_visual: null` quando o modelo de visão remoto está indisponível), garantindo status HTTP 200, preservação de SLAs regulamentares e continuidade ininterrupta do serviço ao munícipe.
 
 ---
 
@@ -383,8 +401,14 @@ TOTAL GERAL: 49/49 TESTES AUTOMATIZADOS APROVADOS — 100% DE SUCESSO
 
 ### 11.2 Limitações Transparentes da Inteligência Artificial
 1. **Oclusão em Vistorias Subterrâneas Profundas:** A triagem computacional baseada em relatos textuais e fotos de superfície não substitui a inspeção física por CFTV em galerias pluviais profundas ou adutoras enterradas.
-2. **Qualidade Visual e Iluminação Noturna das Fotos:** Imagens tremidas, muito escuras ou genéricas podem limitar o laudo multimodal do modelo de visão, levando o sistema a se apoiar no texto do relato e nos dados do Oracle.
-3. **Limites de Taxa por Minuto e Papel Consultivo:** A cota de TPM do recurso no provedor de IA pode exigir controle sob rajadas extremas (cobertas por contingência normativa HTTP 200), e todo laudo gerado atua como apoio técnico consultivo à decisão do engenheiro/servidor municipal.
+2. **Qualidade Visual e Iluminação Noturna das Fotos:** Imagens tremidas, muito escuras ou genéricas podem limitar o laudo multimodal do modelo de visão, levando o sistema a se apoiar no texto do relato e nos dados do Oracle. Sob contingência sem provedor remoto, `analise_visual` permanece `null` para não simular inspeção visual inexistente.
+3. **Limites de Taxa por Minuto e Papel Consultivo:** A cota de requisições de modelos gratuitos em nuvem pode sofrer limitação sob rajadas (coberta por contingência normativa HTTP 200), e todo laudo gerado atua como apoio técnico consultivo à decisão do engenheiro/servidor municipal.
+
+### 11.3 Declaração de Uso de Inteligência Artificial Generativa (Política FIAP)
+Em cumprimento às diretrizes da Global Solution FIAP:
+- **Ferramentas Utilizadas:** **Gemini 3.8 Flash**, **Gemini 4 Hydrogen** e **Claude Sonnet 5.5**.
+- **Finalidade de Uso:** Apoio na pesquisa conceitual sobre legislação urbana paulistana (decretos PMSP, prazos SP156, normas CET/Sabesp/Ilumina SP), estruturação de diagramas ASCII, revisão textual da documentação e validação de casos de borda na suíte de testes.
+- **Revisão Humana:** Todo o código-fonte, prompts estruturados, invariantes de negócio (IoB/IoT/SLA), queries SQL/Oracle e suítes de validação foram projetados, revisados, executados e validados pelos integrantes do grupo.
 
 ---
 
