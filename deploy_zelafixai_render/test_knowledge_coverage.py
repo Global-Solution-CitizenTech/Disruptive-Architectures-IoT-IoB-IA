@@ -104,15 +104,16 @@ def main() -> int:
 
     print("-" * 80)
 
-    # Validação de metadados ChromaDB ('urgency' preservada) e filtro estrito por categoria
+    # Validação de metadados ('urgency' preservada) e filtro estrito por categoria
     ref_urgencia = KnowledgeService.buscar_chunk_por_id("cet_01")
     res_urgencia = KnowledgeService.buscar_chunks_rag("semáforo apagado cruzamento CET", top_k=2, categoria_filtro="sinalizacao_transito")
+    backend_usado = res_urgencia["chunks"][0].get("vector_db", "N/A") if res_urgencia["chunks"] else "N/A"
     ok_urgencia = bool(res_urgencia["chunks"]) and all(
         c.get("urgency") == ref_urgencia.get("urgency") and c.get("category") == "sinalizacao_transito"
         for c in res_urgencia["chunks"]
         if c["id"] == "cet_01"
     )
-    print(f"{'✅ OK' if ok_urgencia else '❌ FALHA'} | Metadado 'urgency' preservado via ChromaDB ({res_urgencia['chunks'][0].get('urgency') if res_urgencia['chunks'] else 'N/A'})")
+    print(f"{'✅ OK' if ok_urgencia else '❌ FALHA'} | Metadado 'urgency' preservado via {backend_usado} ({res_urgencia['chunks'][0].get('urgency') if res_urgencia['chunks'] else 'N/A'})")
     if not ok_urgencia:
         falhas += 1
 

@@ -28,6 +28,8 @@ def limpar_texto_mobile(texto: str) -> str:
     if not texto:
         return ""
     texto = texto[:50000]
+    texto = re.sub(r"<think>.*?</think>", "", texto, flags=re.DOTALL | re.IGNORECASE)
+    texto = re.sub(r"<think>.*$", "", texto, flags=re.DOTALL | re.IGNORECASE)
 
     linhas = texto.split("\n")
     linhas_tratadas = []

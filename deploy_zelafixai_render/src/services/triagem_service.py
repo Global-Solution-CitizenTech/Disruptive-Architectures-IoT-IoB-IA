@@ -15,7 +15,7 @@ from src.services.ai_service import AiService
 from src.database.oracle_client import OracleClient
 from src.repositories.chat_repository import ChatRepository
 from src.utils.guardrails import sanitizar_lgpd
-from src.utils.text import limpar_texto_mobile
+from src.utils.text import limpar_texto_mobile, normalizar_texto
 
 logger = logging.getLogger("ZelaFixAI.TriagemService")
 
@@ -128,13 +128,13 @@ class TriagemService:
 
             if dados_oracle:
                 if (categoria_raw == "Geral" or not categoria_raw) and dados_oracle.get("categoria"):
-                    categoria_raw = dados_oracle["categoria"]
+                    categoria_raw = sanitizar_lgpd(dados_oracle["categoria"])
                 if (titulo_raw == "Relato de Zeladoria" or not titulo_raw) and dados_oracle.get("titulo"):
-                    titulo_raw = dados_oracle["titulo"]
+                    titulo_raw = sanitizar_lgpd(dados_oracle["titulo"])
                 if not descricao_raw and dados_oracle.get("descricao"):
                     descricao_raw = sanitizar_lgpd(dados_oracle["descricao"])
                 if (bairro_raw == "São Paulo - SP" or not bairro_raw) and dados_oracle.get("bairro"):
-                    bairro_raw = dados_oracle["bairro"]
+                    bairro_raw = sanitizar_lgpd(dados_oracle["bairro"])
                 if apoios == 0 and dados_oracle.get("apoios_comunitarios"):
                     apoios = dados_oracle["apoios_comunitarios"]
 
@@ -142,7 +142,7 @@ class TriagemService:
             anomalia_iot = bool(telemetria and telemetria.anomalia_detectada)
             telemetria_str = ""
             if telemetria:
-                telemetria_str = (
+                telemetria_str = sanitizar_lgpd(
                     f"Sensor {telemetria.device_id or 'IoT'} ({telemetria.tipo_sensor or 'urbano'}): "
                     f"{telemetria.valor_medido if telemetria.valor_medido is not None else 'N/D'} "
                     f"{telemetria.unidade or ''} | Anomalia na borda: {'SIM' if anomalia_iot else 'NÃO'}"
@@ -179,7 +179,7 @@ class TriagemService:
                 origem_triagem = "ZelaFix AI Triagem (Contingência Normativa)"
 
             # 3. Invariantes operacionais (Piso normativo RAG / IoB / IoT / limite 150 chars / LGPD)
-            prioridade = laudo.prioridade.upper().strip()
+            prioridade = normalizar_texto(laudo.prioridade).upper()
             if prioridade not in _ORDEM_PRIORIDADE:
                 prioridade = "MEDIA"
             if chunks and float(chunks[0].get("similarity_score", 0.0)) >= 0.45:

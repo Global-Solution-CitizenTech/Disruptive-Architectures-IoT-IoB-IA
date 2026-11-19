@@ -141,6 +141,10 @@ class AiService:
             return None
 
     @classmethod
+    def embeddings_em_cooldown(cls) -> bool:
+        return time.monotonic() < cls._emb_cooldown_until
+
+    @classmethod
     def gerar_embeddings(cls, textos: List[str]) -> Optional[List[List[float]]]:
         """Gera embeddings normalizados em lote via Provedor de IA com cache LRU."""
         if not textos:
@@ -184,9 +188,10 @@ class AiService:
                     else:
                         raise
                 target_dim = cfg.AI_EMBEDDING_DIMENSIONS
+                itens_ordenados = sorted(resp.data, key=lambda x: getattr(x, "index", 0))
                 gerados = [
                     _l2_normalize(list(item.embedding)[:target_dim] if target_dim > 0 and len(item.embedding) > target_dim else list(item.embedding))
-                    for item in resp.data
+                    for item in itens_ordenados
                 ]
                 with cls._lock:
                     for idx, txt, vec in zip(faltantes_idx, faltantes_txt, gerados):
@@ -264,7 +269,7 @@ class AiService:
         tools: Optional[List[Dict[str, Any]]] = None,
         tool_executor: Optional[Callable[[str, Dict[str, Any]], str]] = None,
         json_mode: bool = False,
-        max_tokens: int = 2048,
+        max_tokens: int = 4096,
     ) -> Optional[str]:
         """Executa inferência no modelo configurado com suporte a ReAct Tool Calling via JSON."""
         prompt_sistema = system_prompt
@@ -284,8 +289,10 @@ class AiService:
                 kwargs["response_format"] = {"type": "json_object"}
 
             resp = client.chat.completions.create(**kwargs)
-            conteudo = (resp.choices[0].message.content or "").strip()
+            escolha = resp.choices[0]
+            conteudo = (escolha.message.content or "").strip()
             if not conteudo:
+                logger.warning(f"Modelo '{modelo}' retornou conteúdo vazio (finish_reason={escolha.finish_reason}).")
                 return None
 
             if usar_tools and tool_executor:
@@ -298,7 +305,13 @@ class AiService:
                             break
                 if isinstance(tool_req, dict) and tool_req.get("name"):
                     nome_fn = str(tool_req["name"]).strip()
-                    args = tool_req.get("arguments") if isinstance(tool_req.get("arguments"), dict) else {}
+                    raw_args = tool_req.get("arguments")
+                    if isinstance(raw_args, str):
+                        try:
+                            raw_args = json.loads(raw_args)
+                        except Exception:
+                            raw_args = {}
+                    args = raw_args if isinstance(raw_args, dict) else {}
                     saida = tool_executor(nome_fn, args)
                     mensagens.append({"role": "assistant", "content": conteudo})
                     mensagens.append({
@@ -324,7 +337,7 @@ class AiService:
         tools: Optional[List[Dict[str, Any]]] = None,
         tool_executor: Optional[Callable[[str, Dict[str, Any]], str]] = None,
         json_mode: bool = False,
-        max_tokens: int = 2048,
+        max_tokens: int = 4096,
     ) -> Tuple[Optional[str], Optional[str]]:
         """
         Executa inferência no modelo único configurado (`AI_MODEL`) com suporte a visão, tools e JSON.
@@ -368,7 +381,7 @@ class AiService:
         imagem_base64: Optional[Union[str, bytes]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
         tool_executor: Optional[Callable[[str, Dict[str, Any]], str]] = None,
-        max_tokens: int = 2048,
+        max_tokens: int = 4096,
     ) -> Tuple[Optional[T], Optional[str]]:
         """Executa inferência em JSON Mode no modelo configurado (`AI_MODEL`) e valida via Pydantic."""
         conteudo, modelo = cls.executar_chat(

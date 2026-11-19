@@ -91,7 +91,8 @@ O microsserviço acessa a base Oracle FIAP com `oracledb` em **Modo Thin (100% P
 
 ---
 
-## 🛡️ 5. Proteção de Dados (LGPD) & Higienização Mobile Clean
+## 🛡️ 5. Proteção de Dados (LGPD), Segurança & Higienização Mobile Clean
 
-1. **Conformidade LGPD:** Mascara automaticamente números de CPF e cartões na entrada e antes de enviar contexto à nuvem ou gravar no SQLite.
-2. **Higienização Mobile Clean:** Remove `**`, `*` e tabelas Markdown (`| col |`), garantindo formatação limpa (`• `) no app React Native.
+1. **Conformidade LGPD:** Mascara automaticamente CPF, cartões de crédito, e-mails e telefones na entrada (incluindo histórico multi-turno e dados vindos do Oracle), antes da inferência, persistência no SQLite ou retorno HTTP.
+2. **Guardrail Anti-Prompt Injection:** Bloqueia tentativas explícitas de sobrescrita de instruções, jailbreak ou extração de segredos antes de acionar o provedor externo de IA, retornando recusa cívica HTTP 200.
+3. **Higienização Mobile Clean:** Remove `<think>...</think>`, `**`, `*` e tabelas Markdown (`| col |`), garantindo formatação limpa (`• `) no app React Native.

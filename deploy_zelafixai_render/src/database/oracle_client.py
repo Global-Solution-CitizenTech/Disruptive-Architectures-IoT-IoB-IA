@@ -49,10 +49,11 @@ class OracleClient:
         """Obtém os parâmetros Oracle a partir das variáveis de ambiente carregadas no config."""
         user = os.environ.get("ORACLE_USER", ORACLE_USER).strip()
         password = os.environ.get("ORACLE_PASSWORD", ORACLE_PASSWORD).strip()
+        env_dsn = os.environ.get("ORACLE_DSN", "").strip()
         url = os.environ.get("ORACLE_URL", ORACLE_URL).strip()
-        dsn = os.environ.get("ORACLE_DSN", ORACLE_DSN).strip() or "oracle.fiap.com.br:1521/orcl"
+        dsn = env_dsn or ORACLE_DSN or "oracle.fiap.com.br:1521/orcl"
 
-        if url and "@//" in url:
+        if not env_dsn and url and "@//" in url:
             partes = url.split("@//")
             if len(partes) > 1 and partes[1].strip():
                 dsn = partes[1].strip()
@@ -98,19 +99,23 @@ class OracleClient:
         if not conn:
             return {"status": "offline", "motivo": "nao foi possivel conectar ao servidor Oracle FIAP"}
 
+        cfg = cls._obter_config()
+        usuario = cfg["user"]
+        usuario_mascarado = f"{usuario[:2]}****{usuario[-2:]}" if len(usuario) > 4 else "configurado"
         try:
             with conn.cursor() as cursor:
                 cursor.execute("SELECT table_name FROM user_tables ORDER BY table_name")
                 tabelas = [row[0] for row in cursor.fetchall()]
                 return {
                     "status": "online",
-                    "servidor": "oracle.fiap.com.br:1521/orcl",
-                    "usuario": cls._obter_config()["user"],
+                    "servidor": cfg["dsn"],
+                    "usuario": usuario_mascarado,
                     "tabelas_encontradas": tabelas,
                     "modo": "thin (100% python nativo)"
                 }
         except Exception as e:
-            return {"status": "erro", "motivo": str(e)}
+            logger.warning(f"Erro ao verificar conexão Oracle: {e}")
+            return {"status": "erro", "motivo": "falha ao consultar metadados no Oracle FIAP"}
         finally:
             try:
                 conn.close()

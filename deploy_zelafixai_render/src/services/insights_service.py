@@ -14,7 +14,7 @@ from src.repositories.chat_repository import ChatRepository
 from src.services.knowledge_service import KnowledgeService
 from src.services.ai_service import AiService
 from src.utils.guardrails import sanitizar_lgpd
-from src.utils.text import limpar_texto_mobile
+from src.utils.text import limpar_texto_mobile, normalizar_texto
 
 logger = logging.getLogger("ZelaFixAI.InsightsService")
 
@@ -79,14 +79,15 @@ class InsightsService:
             schema_cls=_InsightsIaSchema,
             system_prompt=SYSTEM_INSIGHTS,
             user_prompt=prompt,
-            max_tokens=1100,
         )
 
         insights: List[InsightItem] = []
         if ia_resp and ia_resp.insights:
             for item in ia_resp.insights[:4]:
                 cat = item.categoria.strip().lower()
-                urg = item.urgencia.strip().lower()
+                urg = normalizar_texto(item.urgencia)
+                if urg == "urgente":
+                    urg = "alta"
                 insights.append(
                     InsightItem(
                         categoria=cat if cat in _EIXOS_VALIDOS else "seguranca",

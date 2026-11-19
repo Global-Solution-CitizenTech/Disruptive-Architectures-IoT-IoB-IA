@@ -80,7 +80,7 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 | Indicador (KPI) | Cenário Legado (Manual) | Meta com ZelaFix AI | Como é Aferido |
 | :--- | :--- | :--- | :--- |
 | **Tempo de Triagem e Enquadramento Legal** | 2 a 5 dias úteis | **< 3 segundos** (tempo real) | Timestamp da auditoria em `auditoria_triagens` (SQLite) |
-| **Assertividade de Roteamento por Órgão** | ~65% (erros de competência) | **100% nos 8 eixos normativos** | Suíte automatizada `test_zelafix_scenarios.py` |
+| **Assertividade de Roteamento por Órgão** | ~65% (erros de competência) | **100% nos 8 eixos normativos** | Suítes `test_knowledge_coverage.py` (37) + `test_zelafix_scenarios.py` (12) |
 | **Priorização Coletiva Cidadã (IoB +1 / IoT)** | Inexistente (fila FIFO) | **Promoção automática ($\ge 25$ apoios ou anomalia IoT)** | Contagem em `voto_chamado` (Oracle) + `telemetria_iot` |
 | **Transparência de SLA Regulamentar** | Opaco para o munícipe | **100% dos laudos com SLA explícito (4h a 72h)** | Campo `sla_sugerido_horas` validado via Pydantic |
 
@@ -95,12 +95,12 @@ Na Cidade de São Paulo, os canais legados de zeladoria urbana (como centrais te
 
   [ CAMADA DE CLIENTES (CONSUMIDORES) ]
   ┌───────────────────────────────┐     ┌───────────────────────────────┐     ┌───────────────────────────────┐
-  │     App ZelaFix Mobile        │     │   Backend Java Spring Boot    │     │   Swagger OpenAPI (/docs)     │
-  │   (React Native / Expo iOS)   │     │   (Worker & API Municipal)    │     │   (FastAPI Documentation)     │
+  │     App ZelaFix Mobile        │     │  Clientes REST / QA / Demos   │     │   Swagger OpenAPI (/docs)     │
+  │   (React Native / Expo)       │     │ (run_qa_demo / Integrações)   │     │   (FastAPI Documentation)     │
   └───────────────┬───────────────┘     └───────────────┬───────────────┘     └───────────────┬───────────────┘
                   │                                     │                                     │
-                  │ POST /ai/chat                       │ POST /ai/triagem                    │ GET /health
-                  │ POST /ai/triagem                    │ POST /ai/insights                   │ GET /ai/vector-store/status
+                  │ POST /ai/chat, /ai/insights         │ POST /ai/triagem                    │ GET /health
+                  │ GET/DELETE /ai/sessions & /history  │ GET  /ai/chamados/{id}              │ GET /ai/vector-store/status
                   ▼                                     ▼                                     ▼
 ====================================================================================================
   [ API GATEWAY & CAMADA DE ROTAS RESTful — FASTAPI (main:app / api:app) ]
@@ -247,9 +247,11 @@ deploy_zelafixai_render/src/knowledge/
 O microsserviço implementa camadas ativas de conformidade e tratamento de dados ([`src/utils/guardrails.py`](./deploy_zelafixai_render/src/utils/guardrails.py)):
 
 1. **Anonimização de Dados Pessoais (LGPD):**
-   - Padrões de CPF (com pontuação `123.456.789-00` ou dígitos contínuos `12345678900`) e números de cartão de crédito são interceptados por regex e substituídos por `[DADO PESSOAL ANONIMIZADO]`.
-2. **Higienização Mobile Clean:**
-   - A função `limpar_texto_mobile` remove tabelas de pipes `|`, divisores Markdown e tags incompatíveis, entregando texto limpo perfeitamente renderizável no componente `Text` do React Native sem quebra de layout.
+   - Padrões de CPF (`123.456.789-00` ou 11 dígitos), cartão de crédito (16 dígitos), e-mail e telefone brasileiro são interceptados por regex e substituídos por `[DADO PESSOAL ANONIMIZADO]` na entrada (incluindo histórico multi-turno), nos dados lidos do Oracle e na saída.
+2. **Guardrail Anti-Prompt Injection & Telemetria Segura:**
+   - Tentativas explícitas de sobrescrita de instruções, jailbreak ou extração de segredos são bloqueadas em `detectar_prompt_injection` antes da inferência externa (HTTP 200 com recusa cívica), e `/ai/oracle/status` mascara o usuário Oracle sem expor credenciais ou caminhos absolutos do host.
+3. **Higienização Mobile Clean:**
+   - A função `limpar_texto_mobile` remove blocos `<think>...</think>`, tabelas de pipes `|`, divisores Markdown e tags incompatíveis, entregando texto limpo perfeitamente renderizável no componente `Text` do React Native sem quebra de layout.
 
 ---
 
@@ -292,7 +294,7 @@ O microsserviço implementa camadas ativas de conformidade e tratamento de dados
 ---
 
 ### 9.2 `POST /ai/triagem` (Emissor de Laudo Técnico Municipal)
-**Exemplo de Request (Consumido pelo Backend Java e App Mobile):**
+**Exemplo de Request (Triagem Multimodal REST / QA / Integrações; compartilha base Oracle com o ecossistema Java/.NET):**
 ```json
 {
   "chamado": {
@@ -422,7 +424,7 @@ Disruptive-Architectures-IoT-IoB-IA/
 ├── run_qa_demo.py                      # Runner executivo oficial de homologação e QA (--delay)
 ├── .gitignore                          # Ignora ambientes virtuais, bancos e caches
 └── deploy_zelafixai_render/            # Microsserviço Python FastAPI (Deploy no Render)
-    ├── data/
+    ├── data/                           # Gerado em runtime (gitignored — SQLite, fingerprint e ChromaDB)
     │   ├── zelafixai.db                # SQLite com tabelas relacionais (modo WAL)
     │   ├── kb_fingerprint.json         # Fingerprint SHA-256 para evitar re-embeddings no boot
     │   └── chroma/                     # ChromaDB com coleção vetorial HNSW (1536D)
@@ -517,7 +519,10 @@ Após iniciar, acesse:
 
 ### Execução das Suítes de Testes e Homologação
 ```bash
-# Dentro de deploy_zelafixai_render/:
+# Na raiz do repositório (execução rápida dos 12 cenários):
+python run_qa_demo.py --delay 0
+
+# Ou dentro de deploy_zelafixai_render/:
 # 1. Teste de Cobertura Semântica RAG (37 casos):
 python test_knowledge_coverage.py
 

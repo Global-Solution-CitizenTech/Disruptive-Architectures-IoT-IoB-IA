@@ -54,6 +54,10 @@ class KnowledgeService:
                     return
 
             # 2. Caso base nova ou container limpo, gera embeddings em lote no Provedor de IA
+            if AiService.embeddings_em_cooldown():
+                cls._chroma_sincronizado = False
+                return
+
             textos = [_texto_indexacao_chunk(c) for c in cls._chunks_indexados]
             vetores = AiService.gerar_embeddings(textos)
             if vetores and len(vetores) == len(cls._chunks_indexados):
@@ -64,9 +68,9 @@ class KnowledgeService:
                 cls._indice_inicializado = True
                 return
 
+            # Mantém _indice_inicializado=False para tentar reindexação automática após o cooldown
             cls._chroma_sincronizado = False
-            logger.warning("Provedor de IA indisponível para indexação inicial; fallback offline habilitado.")
-            cls._indice_inicializado = True
+            logger.warning("Provedor de IA indisponível para indexação inicial; fallback offline habilitado até o fim do cooldown.")
 
     @classmethod
     def _fallback_contingencia_offline(

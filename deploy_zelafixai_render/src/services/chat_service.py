@@ -14,7 +14,7 @@ from src.services.knowledge_service import KnowledgeService
 from src.services.ai_service import AiService
 from src.services.chamado_oracle_service import ChamadoOracleService, TOOLS_ZELAFIX
 from src.repositories.chat_repository import ChatRepository
-from src.utils.guardrails import sanitizar_lgpd
+from src.utils.guardrails import sanitizar_lgpd, detectar_prompt_injection
 from src.utils.text import normalizar_texto, limpar_texto_mobile
 
 logger = logging.getLogger("ZelaFixAI.ChatService")
@@ -89,15 +89,49 @@ class ChatService:
             pergunta_segura = sanitizar_lgpd(request.pergunta)
             pergunta_norm = normalizar_texto(pergunta_segura)
 
-            # 1. Memória conversacional multi-turno via SQLite quando sessão já existe
-            historico_para_llm = request.historico
-            if not historico_para_llm and sessao_existente:
+            # 0. Guardrail de segurança contra Prompt Injection / Jailbreak antes da inferência
+            if detectar_prompt_injection(pergunta_segura):
+                resposta_guardrail = (
+                    "🏛️ Olá! Sou o ZelaBot (ZelaFix). Por segurança, atuo exclusivamente com orientações de "
+                    "zeladoria urbana e cidadania em São Paulo e não posso alterar minhas diretrizes nem exibir configurações internas."
+                )
+                ChatRepository.salvar_interacao(
+                    session_id=session_id,
+                    chamado_id=chamado_id,
+                    bairro=bairro or "São Paulo - SP",
+                    pergunta=pergunta_segura,
+                    resposta=resposta_guardrail,
+                    categoria="direitos_cidadao",
+                    urgencia="BAIXA",
+                    orgao_responsavel="Zeladoria Urbana / Subprefeitura Regional",
+                    sla_horas=72,
+                    origem_resposta="ZelaBot (Guardrail de Segurança)",
+                )
+                return ChatResponse(
+                    resposta=resposta_guardrail,
+                    categoria="direitos_cidadao",
+                    urgencia="baixa",
+                    acoes_recomendadas=["Descrever um problema urbano ou consultar um protocolo (#ID)"],
+                    origem_resposta="ZelaBot (Guardrail de Segurança)",
+                    sessionId=session_id,
+                    sources_used=[],
+                    rag_grounded=False,
+                )
+
+            # 1. Memória conversacional multi-turno (sempre sanitizada sob LGPD)
+            if request.historico:
+                historico_para_llm = [
+                    MensagemHistorico(sender=item.sender, text=sanitizar_lgpd(item.text))
+                    for item in request.historico
+                ]
+            elif sessao_existente:
                 registros_db = ChatRepository.buscar_historico(session_id=session_id, limit=6)
-                if registros_db:
-                    historico_para_llm = [
-                        MensagemHistorico(sender=row["sender"], text=sanitizar_lgpd(row["text"]))
-                        for row in registros_db
-                    ]
+                historico_para_llm = [
+                    MensagemHistorico(sender=row["sender"], text=sanitizar_lgpd(row["text"]))
+                    for row in registros_db
+                ] if registros_db else None
+            else:
+                historico_para_llm = None
 
             # 2. Fast-path somente leitura no Oracle FIAP por #ID ou contexto do app
             id_detectado = ChamadoOracleService.extrair_id_chamado_da_pergunta(pergunta_segura)
@@ -176,11 +210,11 @@ class ChatService:
                 if a and a.strip()
             ][:3]
 
-            urgencia_norm = ia_result.urgencia.strip()
-            if urgencia_norm.lower() == "urgente":
+            urgencia_norm = normalizar_texto(ia_result.urgencia)
+            if urgencia_norm == "urgente":
                 urgencia_norm = "URGENTE"
-            elif urgencia_norm.lower() in {"baixa", "media", "alta"}:
-                urgencia_norm = urgencia_norm.lower()
+            elif urgencia_norm in {"baixa", "media", "alta"}:
+                urgencia_norm = urgencia_norm
             else:
                 urgencia_norm = chunks_recuperados[0].get("urgency", "baixa") if chunks_recuperados else "baixa"
 

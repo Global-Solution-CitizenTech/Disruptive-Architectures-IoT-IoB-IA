@@ -51,6 +51,7 @@ class ChromaVectorStore:
     _instance: Optional["ChromaVectorStore"] = None
     _client = None
     _collection = None
+    _collection_name: str = COLLECTION_NAME
     _is_ready: bool = False
 
     def __init__(self) -> None:
@@ -77,6 +78,7 @@ class ChromaVectorStore:
                 name=target_col,
                 metadata={"hnsw:space": "cosine"},
             )
+            self._collection_name = target_col
             self._is_ready = True
             logger.info(f"ChromaDB pronto em '{self.chroma_dir}' (Coleção: '{target_col}').")
         except Exception as err:
@@ -93,6 +95,10 @@ class ChromaVectorStore:
     @property
     def is_ready(self) -> bool:
         return self._is_ready
+
+    @property
+    def collection_name(self) -> str:
+        return self._collection_name
 
     @property
     def count(self) -> int:

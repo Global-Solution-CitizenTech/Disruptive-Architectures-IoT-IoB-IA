@@ -23,6 +23,7 @@ from src.services.chat_service import ChatService
 from src.services.triagem_service import TriagemService
 from src.services.insights_service import InsightsService
 from src.repositories.chat_repository import ChatRepository
+from src.utils.guardrails import sanitizar_lgpd
 
 ai_router = APIRouter(prefix="/ai", tags=["AI & Triagem Urbana"])
 
@@ -102,15 +103,15 @@ def vector_store_status_endpoint() -> dict:
     """
     Retorna o status do Banco de Dados Vetorial ChromaDB (persistência, coleção e chunks indexados).
     """
-    from src.database.vector_store import get_vector_store, CHROMA_DIR, COLLECTION_NAME
+    from src.database.vector_store import get_vector_store
     from src.core.config import AI_EMBEDDING_DIMENSIONS, AI_EMBEDDING_MODEL
     vs = get_vector_store()
     return {
         "status": "online" if vs.is_ready else "fallback_mode",
         "database": "ChromaDB (HNSW)",
         "embedding_model": AI_EMBEDDING_MODEL,
-        "storage_path": CHROMA_DIR,
-        "collection_name": COLLECTION_NAME,
+        "storage_path": "data/chroma",
+        "collection_name": vs.collection_name,
         "indexed_chunks": vs.count,
         "vector_dimensions": AI_EMBEDDING_DIMENSIONS,
         "distance_metric": "cosine"
@@ -134,6 +135,9 @@ def listar_chamados_oracle_endpoint(
     """
     from src.database.oracle_client import OracleClient
     chamados = OracleClient.listar_chamados_recentes(limit=limit, bairro=bairro)
+    for item in chamados:
+        if item.get("titulo"):
+            item["titulo"] = sanitizar_lgpd(item["titulo"])
     return {
         "total": len(chamados),
         "chamados": chamados
@@ -174,6 +178,9 @@ def consultar_chamado_oracle_endpoint(id_chamado: int) -> dict:
     )
     triagem = TriagemService.realizar_triagem(TriagemRequest(chamado=payload_chamado))
     dados_resposta = {k: v for k, v in dados.items() if k != "foto_bytes"}
+    for campo in ("titulo", "descricao", "logradouro"):
+        if dados_resposta.get(campo):
+            dados_resposta[campo] = sanitizar_lgpd(dados_resposta[campo])
 
     return {
         "status": "sucesso",

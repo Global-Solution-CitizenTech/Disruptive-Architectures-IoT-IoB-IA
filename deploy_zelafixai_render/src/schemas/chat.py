@@ -3,7 +3,7 @@ Schemas Pydantic: Conversação, Chat, RAG e Auditoria de Zeladoria — ZelaFix 
 Global Solution 2 — Disruptive Architectures: IoT, IoB & Generative IA (FIAP 2TDSPG)
 """
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from src.schemas.chamado import ChamadoContextPayload
 
 class MensagemHistorico(BaseModel):
@@ -18,11 +18,18 @@ class RetrievedSource(BaseModel):
     similarity_score: float = Field(..., description="Score de similaridade de cosseno (arredondado em 4 casas)")
 
 class ChatRequest(BaseModel):
-    pergunta: str = Field(..., description="Dúvida, relato ou consulta enviada pelo munícipe")
+    pergunta: str = Field(..., min_length=1, description="Dúvida, relato ou consulta enviada pelo munícipe")
     chamadoContext: Optional[ChamadoContextPayload] = Field(default=None, description="Contexto do chamado ou ocorrência urbana ativa")
     foto_base64: Optional[str] = Field(default=None, description="Foto da ocorrência em formato Base64 para análise visual multimodal")
     historico: Optional[List[MensagemHistorico]] = Field(default=None, description="Histórico de mensagens recentes para memória conversacional")
     sessionId: Optional[str] = Field(default=None, description="Identificador único da sessão de chat")
+
+    @field_validator("pergunta")
+    @classmethod
+    def validar_pergunta_nao_vazia(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("A pergunta não pode ser vazia.")
+        return v
 
 class ChatResponse(BaseModel):
     resposta: str = Field(..., description="Resposta processada e sanitizada para visualização mobile no app")

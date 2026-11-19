@@ -4,7 +4,7 @@ Global Solution 2 — Disruptive Architectures: IoT, IoB & Generative IA (FIAP 2
 """
 import re
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from typing import Optional, Dict, Any, Tuple
 from src.database.oracle_client import OracleClient
@@ -168,7 +168,7 @@ class ChamadoOracleService:
             try:
                 agora = datetime.now(ZoneInfo("America/Sao_Paulo"))
             except Exception:
-                agora = datetime.utcnow() - timedelta(hours=3)
+                agora = datetime.now(timezone.utc) - timedelta(hours=3)
             limite = agora + timedelta(hours=horas)
             return (
                 f"Data/hora atual em São Paulo: {agora.strftime('%d/%m/%Y %H:%M')}. "
